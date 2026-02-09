@@ -26,5 +26,9 @@ data/
 # Notebooks
 .ipynb_checkpoints/
 
+# Node
+node_modules/
+dist/
+
 # Logs
 *.log
