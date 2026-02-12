@@ -4,7 +4,8 @@ venv/
 env/
 workmate-env/
 
-
+# .env file
+.env
 
 # Python cache
 __pycache__/
