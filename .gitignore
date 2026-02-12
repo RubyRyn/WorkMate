@@ -33,4 +33,6 @@ dist/
 # Logs
 *.log
 
+# Data stores (explicit)
 chroma_db
+notion_data.json
