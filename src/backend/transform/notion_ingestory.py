@@ -107,3 +107,6 @@ if __name__ == "__main__":
     ingestor = NotionIngestor(file_path="notion_data.json", chunk_size=1000)
     ingestor.db.reset()
     ingestor.run_pipeline()
+
+    result = ingestor.db.query("What is the purpose of this document?", n_results=5)
+    print("Query Results:", result["documents"][0])
