@@ -98,3 +98,5 @@ if __name__ == "__main__":
     filtered_results = db.query("What changed recently?", where={"tag": "database"})
     if filtered_results["documents"]:
         print(filtered_results['documents'][0])
+
+    db.reset()
