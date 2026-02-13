@@ -50,7 +50,7 @@ def fetch_child_database(token: str, database_id: str, include_content: bool = T
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "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"
+    NOTION_TOKEN = "Private integration token here"
     DATABASE_ID = "2ebf241a-99e1-8009-8dfc-d13424079f56"
     INCLUDE_ROW_CONTENT = True
     # ===========================

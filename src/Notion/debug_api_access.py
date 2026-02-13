@@ -127,7 +127,7 @@ def debug_notion_access(token: str, object_id: str):
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "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"
+    NOTION_TOKEN = "Private integration token here"
     OBJECT_ID = "2ebf241a99e180098dfcd13424079f56"  # Try without dashes
     # ===========================
     
