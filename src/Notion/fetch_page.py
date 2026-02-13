@@ -29,8 +29,8 @@ def fetch_page_by_id(token: str, page_id: str):
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "Private integration token here"
-    PAGE_ID = "300f241a-99e1-8009-8394-c498f54372d4"  
+    NOTION_TOKEN = "###"
+    PAGE_ID = "###"  
     
     # ===========================
     

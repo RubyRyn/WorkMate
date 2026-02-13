@@ -41,9 +41,9 @@ def fetch_database_by_id(token: str, database_id: str, include_content: bool = T
 
 def main():
     # ===== CONFIGURE THESE =====
-    #"2ebf241a-99e1-8009-8dfc-d13424079f56" 
-    NOTION_TOKEN = "Private integration token here"
-    DATABASE_ID = "2ebf241a-99e1-8009-8dfc-d13424079f56"
+    
+    NOTION_TOKEN = "###"
+    DATABASE_ID = "###"
     INCLUDE_ROW_CONTENT = True  # Set to False for faster fetching (properties only)
     
     

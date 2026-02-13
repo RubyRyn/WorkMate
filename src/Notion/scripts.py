@@ -1,7 +1,7 @@
 from notion_fetcher.Notion_Fetcher import NotionFetcher
 
 # Initialize
-fetcher = NotionFetcher("")
+fetcher = NotionFetcher("###")
 
 # Fetch everything
 documents = fetcher.fetch_all()

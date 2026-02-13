@@ -85,8 +85,8 @@ def check_notion_id(token: str, object_id: str):
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "Private integration token here"
-    OBJECT_ID = "2ebf241a-99e1-8009-8dfc-d13424079f56"
+    NOTION_TOKEN = "###"
+    OBJECT_ID = "###"
     # ===========================
     
     check_notion_id(NOTION_TOKEN, OBJECT_ID)
