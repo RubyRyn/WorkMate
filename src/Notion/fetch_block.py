@@ -97,7 +97,7 @@ def fetch_children_recursive(
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "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"
+    NOTION_TOKEN = "Private integration token here"
     BLOCK_ID = "2ebf241a-99e1-8009-8dfc-d13424079f56"
     MAX_DEPTH = 10  # How deep to fetch nested blocks
     # ===========================

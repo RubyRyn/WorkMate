@@ -29,7 +29,7 @@ def fetch_page_by_id(token: str, page_id: str):
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "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"
+    NOTION_TOKEN = "Private integration token here"
     PAGE_ID = "300f241a-99e1-8009-8394-c498f54372d4"  
     
     # ===========================

@@ -12,7 +12,7 @@ from Notion_Fetcher import NotionFetcher
 def main():
     """Example usage."""
     # Get token from environment variable
-    token = os.environ.get("NOTION_TOKEN")
+    token = os.environ.get("")
     
     if not token:
         print("Error: NOTION_TOKEN environment variable not set")

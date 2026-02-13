@@ -1,7 +1,7 @@
 from notion_fetcher.Notion_Fetcher import NotionFetcher
 
 # Initialize
-fetcher = NotionFetcher("Private integration token here")
+fetcher = NotionFetcher("")
 
 # Fetch everything
 documents = fetcher.fetch_all()
