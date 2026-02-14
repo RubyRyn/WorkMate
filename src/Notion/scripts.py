@@ -1,7 +1,9 @@
+import os
+NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 from notion_fetcher.Notion_Fetcher import NotionFetcher
 
 # Initialize
-fetcher = NotionFetcher("###")
+fetcher = NotionFetcher(NOTION_TOKEN)
 
 # Fetch everything
 documents = fetcher.fetch_all()

@@ -5,6 +5,7 @@ Main entry point for Notion data fetching.
 import json
 import os
 from typing import List
+import os
 
 from Notion_Fetcher import NotionFetcher
 
@@ -12,7 +13,7 @@ from Notion_Fetcher import NotionFetcher
 def main():
     """Example usage."""
     # Get token from environment variable
-    token = os.environ.get("###")
+    token = os.environ.get("NOTION_TOKEN")
     
     if not token:
         print("Error: NOTION_TOKEN environment variable not set")

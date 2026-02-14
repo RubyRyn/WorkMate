@@ -1,7 +1,8 @@
 """
 Fetch a Notion block and its children by block ID.
 """
-
+import os
+NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 from notion_fetcher.client import NotionClient
 from notion_fetcher.parsers.block_parser import BlockParser
 
@@ -97,7 +98,6 @@ def fetch_children_recursive(
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "###"
     BLOCK_ID = "###"
     MAX_DEPTH = 10  # How deep to fetch nested blocks
     # ===========================

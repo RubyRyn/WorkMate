@@ -2,7 +2,8 @@
 Fetch a child_database (inline database) from Notion.
 This handles databases that are embedded in pages.
 """
-
+import os
+NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 from notion_fetcher.client import NotionClient
 from notion_fetcher.fetchers.database_fetcher import DatabaseFetcher
 
@@ -50,7 +51,6 @@ def fetch_child_database(token: str, database_id: str, include_content: bool = T
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "###"
     DATABASE_ID = "###"
     INCLUDE_ROW_CONTENT = True
     # ===========================

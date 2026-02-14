@@ -1,7 +1,8 @@
 """
 Fetch a Notion database and its rows by database ID.
 """
-
+import os
+NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 from notion_fetcher.client import NotionClient
 from notion_fetcher.fetchers.database_fetcher import DatabaseFetcher
 
@@ -41,8 +42,6 @@ def fetch_database_by_id(token: str, database_id: str, include_content: bool = T
 
 def main():
     # ===== CONFIGURE THESE =====
-    
-    NOTION_TOKEN = "###"
     DATABASE_ID = "###"
     INCLUDE_ROW_CONTENT = True  # Set to False for faster fetching (properties only)
     

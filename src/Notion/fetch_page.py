@@ -1,7 +1,8 @@
 """
 Fetch a single Notion page by its ID.
 """
-
+import os
+NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 from notion_fetcher.client import NotionClient
 from notion_fetcher.fetchers.page_fetcher import PageFetcher
 
@@ -29,7 +30,6 @@ def fetch_page_by_id(token: str, page_id: str):
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "###"
     PAGE_ID = "###"  
     
     # ===========================

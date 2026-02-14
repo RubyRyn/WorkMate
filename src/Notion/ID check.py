@@ -4,6 +4,8 @@ Helps identify if an ID is a page, database, or invalid.
 """
 
 import requests
+import os
+NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 
 
 def check_notion_id(token: str, object_id: str):
@@ -85,7 +87,6 @@ def check_notion_id(token: str, object_id: str):
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "###"
     OBJECT_ID = "###"
     # ===========================
     

@@ -1,7 +1,8 @@
 """
 Detailed debug script to test Notion API access.
 """
-
+import os
+NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 import requests
 
 
@@ -127,7 +128,6 @@ def debug_notion_access(token: str, object_id: str):
 
 def main():
     # ===== CONFIGURE THESE =====
-    NOTION_TOKEN = "###"
     OBJECT_ID = "###"  
     # ===========================
     
