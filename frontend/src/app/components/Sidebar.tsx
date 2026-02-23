@@ -1,5 +1,7 @@
-import { FileText, Database, Clock, ChevronRight } from 'lucide-react';
+import { FileText, Database, Clock, ChevronRight, LogOut } from 'lucide-react';
 import { Card } from './ui/card';
+import { Button } from './ui/button';
+import { useAuth } from '../contexts/AuthContext';
 import type { NotionWorkspace, RecentProject } from '../../types/chat';
 
 const mockWorkspaces: NotionWorkspace[] = [
@@ -15,8 +17,10 @@ const mockProjects: RecentProject[] = [
 ];
 
 export function Sidebar() {
+  const { user, logout } = useAuth();
+
   return (
-    <div className="w-80 bg-slate-50 border-r border-slate-200 h-screen overflow-y-auto p-6">
+    <div className="w-80 bg-slate-50 border-r border-slate-200 h-screen overflow-y-auto p-6 flex flex-col">
       {/* Logo */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-purple-700">WorkMate</h1>
@@ -53,7 +57,7 @@ export function Sidebar() {
       </div>
 
       {/* Recent Project Analysis */}
-      <div>
+      <div className="flex-1">
         <div className="flex items-center gap-2 mb-4">
           <Clock className="w-5 h-5 text-purple-600" />
           <h2 className="font-semibold text-slate-900">Recent Analysis</h2>
@@ -85,6 +89,38 @@ export function Sidebar() {
           ))}
         </div>
       </div>
+
+      {/* User Info */}
+      {user && (
+        <div className="mt-6 border-t border-slate-200 pt-4">
+          <div className="flex items-center gap-3">
+            {user.picture ? (
+              <img
+                src={user.picture}
+                alt={user.name}
+                className="h-9 w-9 rounded-full"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-purple-100 text-sm font-medium text-purple-700">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-slate-900 truncate">{user.name}</p>
+              <p className="text-xs text-slate-500 truncate">{user.email}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              className="h-8 w-8 text-slate-400 hover:text-slate-600"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
