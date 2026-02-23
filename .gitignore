@@ -37,3 +37,6 @@ dist/
 # Data stores (explicit)
 chroma_db
 notion_data.json
+
+# SQLite database
+workmate.db
