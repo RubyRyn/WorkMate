@@ -1,7 +1,9 @@
-import { FileText, Database, Clock, ChevronRight, LogOut } from 'lucide-react';
+import { FileText, Database, Clock, ChevronRight, LogOut, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 import type { NotionWorkspace, RecentProject } from '../../types/chat';
 
 const mockWorkspaces: NotionWorkspace[] = [
@@ -18,6 +20,7 @@ const mockProjects: RecentProject[] = [
 
 export function Sidebar() {
   const { user, logout } = useAuth();
+  const isAdmin = useIsAdmin();
 
   return (
     <div className="w-80 bg-slate-50 border-r border-slate-200 h-screen overflow-y-auto p-6 flex flex-col">
@@ -89,6 +92,19 @@ export function Sidebar() {
           ))}
         </div>
       </div>
+
+      {/* Admin Link */}
+      {isAdmin && (
+        <div className="mt-4">
+          <Link
+            to="/admin"
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+          >
+            <Shield className="h-4 w-4 text-purple-600" />
+            User Management
+          </Link>
+        </div>
+      )}
 
       {/* User Info */}
       {user && (

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.backend.config import settings
 from src.backend.database import Base, engine
-from src.backend.routers import auth
+from src.backend.routers import admin, auth
 
 
 def create_app() -> FastAPI:
@@ -20,5 +20,6 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(auth.router)
+    app.include_router(admin.router)
 
     return app
