@@ -1,6 +1,16 @@
 import type { ChatMessage, NotionWorkspace } from '../types/chat';
+import { getToken } from './auth';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
+
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 /**
  * Send a chat message and get an AI response.
@@ -11,7 +21,7 @@ export async function sendChatMessage(message: string): Promise<ChatMessage> {
   // --- Uncomment when backend is ready ---
   // const res = await fetch(`${BASE_URL}/chat`, {
   //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
+  //   headers: authHeaders(),
   //   body: JSON.stringify({ message }),
   // });
   // if (!res.ok) throw new Error(`Chat request failed: ${res.status}`);
@@ -42,7 +52,9 @@ Key points:
  */
 export async function getWorkspaces(): Promise<NotionWorkspace[]> {
   // --- Uncomment when backend is ready ---
-  // const res = await fetch(`${BASE_URL}/workspaces`);
+  // const res = await fetch(`${BASE_URL}/workspaces`, {
+  //   headers: authHeaders(),
+  // });
   // if (!res.ok) throw new Error(`Workspaces request failed: ${res.status}`);
   // return res.json();
 
