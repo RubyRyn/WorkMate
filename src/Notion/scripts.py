@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 NOTION_TOKEN = os.environ.get("NOTION_TOKEN")
 from notion_fetcher.Notion_Fetcher import NotionFetcher
 
@@ -17,9 +20,9 @@ fetcher.save_to_json(documents, "notion_data.json")
 
 # Each document has:
 for doc in documents:
-    print(doc.id)           # Notion page/row ID
-    print(doc.title)        # Title
-    print(doc.content)      # Text content
+    print(doc.id)  # Notion page/row ID
+    print(doc.title)  # Title
+    print(doc.content)  # Text content
     print(doc.source_type)  # "page" or "database_row"
-    print(doc.url)          # Link back to Notion
+    print(doc.url)  # Link back to Notion
     print(doc.get_full_text())  # Ready for embedding
