@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot } from 'lucide-react';
+import { Bot, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from './ui/button';
 import { CitationBubble } from './CitationBubble';
 import { useAuth } from '../contexts/AuthContext';
 import type { Citation } from '../../types/chat';
@@ -26,22 +28,53 @@ function formatTime(ts: number): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/`{3}[\s\S]*?`{3}/g, (m) => m.replace(/`{3}.*?\n?/g, ''))
+    .replace(/`(.*?)`/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[(\d+)\]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^[-*+]\s+/gm, '- ')
+    .trim();
+}
+
 export function Message({ role, content, citations = [], timestamp }: MessageProps) {
   const { user } = useAuth();
   const [imgError, setImgError] = useState(false);
+  const [copied, setCopied] = useState(false);
   const isUser = role === 'user';
 
   const userInitial = user?.name?.charAt(0).toUpperCase() ?? 'U';
   const showPicture = isUser && user?.picture && !imgError;
 
+  const handleCopy = async () => {
+    const plain = stripMarkdown(content);
+    await navigator.clipboard.writeText(plain);
+    setCopied(true);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div
-      className={`flex gap-4 p-6 ${
+      className={`group relative flex gap-4 p-6 ${
         isUser
           ? 'bg-white dark:bg-slate-900'
           : 'bg-slate-50 dark:bg-slate-800/50'
       }`}
     >
+      {/* Copy button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleCopy}
+        className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+      </Button>
       {/* Avatar */}
       {isUser ? (
         showPicture ? (

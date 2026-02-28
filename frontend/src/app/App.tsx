@@ -1,7 +1,8 @@
 import { Routes, Route } from "react-router-dom";
-import { Sidebar } from "./components/Sidebar";
+import { AppLayout } from "./components/AppLayout";
 import { ChatWindow } from "./components/ChatWindow";
 import { LoginPage } from "./pages/LoginPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
@@ -15,11 +16,20 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminRoute>
-              <div className="flex h-screen overflow-hidden bg-white">
-                <Sidebar />
+              <AppLayout>
                 <AdminPage />
-              </div>
+              </AppLayout>
             </AdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsPage />
+            </AppLayout>
           </ProtectedRoute>
         }
       />
@@ -27,10 +37,9 @@ export default function App() {
         path="/*"
         element={
           <ProtectedRoute>
-            <div className="flex h-screen overflow-hidden bg-white">
-              <Sidebar />
+            <AppLayout>
               <ChatWindow />
-            </div>
+            </AppLayout>
           </ProtectedRoute>
         }
       />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Send, Paperclip } from 'lucide-react';
+import { Send, Paperclip, Bot } from 'lucide-react';
 import { toast } from 'sonner';
 import { Message } from './Message';
 import { TypingIndicator } from './TypingIndicator';
@@ -9,51 +9,15 @@ import { ScrollArea } from './ui/scroll-area';
 import { sendChatMessage } from '../../services/api';
 import type { ChatMessage } from '../../types/chat';
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'user',
-    content: 'Can you summarize the key features from our Q1 product roadmap?',
-    timestamp: Date.now() - 3600000,
-  },
-  {
-    id: '2',
-    role: 'assistant',
-    content: `Based on your Q1 product roadmap, here are the key features planned:
-
-**1. Advanced Analytics Dashboard** [1]
-The team is planning to build a comprehensive analytics dashboard with real-time data visualization and customizable reports.
-
-**2. Mobile App Integration** [2]
-A native mobile application for both iOS and Android is scheduled for development, enabling users to access core features on the go.
-
-**3. API Enhancements** [3]
-Major improvements to the REST API including better rate limiting, webhook support, and enhanced documentation.
-
-These features align with the company's strategic goals of improving user engagement and expanding platform capabilities.`,
-    citations: [
-      {
-        number: 1,
-        source: 'Q1 Feature Roadmap - Analytics Section',
-        excerpt: 'Priority 1: Develop advanced analytics dashboard with customizable widgets and real-time data streaming capabilities',
-      },
-      {
-        number: 2,
-        source: 'Q1 Feature Roadmap - Mobile Strategy',
-        excerpt: 'Native mobile apps planned for Q1 release, focusing on core workflow features with offline support',
-      },
-      {
-        number: 3,
-        source: 'Engineering Docs - API Specifications',
-        excerpt: 'API v2.0 will include webhook subscriptions, improved rate limiting (10k req/hour), and comprehensive OpenAPI documentation',
-      },
-    ],
-    timestamp: Date.now() - 3540000,
-  },
+const suggestedPrompts = [
+  'Summarize the key features from our Q1 product roadmap',
+  'What are the latest updates in our engineering docs?',
+  'Find action items from recent sprint planning notes',
+  'Compare priorities across our connected workspaces',
 ];
 
 export function ChatWindow() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -97,19 +61,44 @@ export function ChatWindow() {
 
       {/* Messages */}
       <ScrollArea className="flex-1 min-h-0">
-        <div className="divide-y divide-slate-200 dark:divide-slate-700">
-          {messages.map((message) => (
-            <Message
-              key={message.id}
-              role={message.role}
-              content={message.content}
-              citations={message.citations}
-              timestamp={message.timestamp}
-            />
-          ))}
-          {isLoading && <TypingIndicator />}
-          <div ref={bottomRef} />
-        </div>
+        {messages.length === 0 && !isLoading ? (
+          <div className="flex flex-col items-center justify-center h-full px-6 py-20">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-purple-600 text-white mb-4">
+              <Bot className="h-7 w-7" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+              How can I help you today?
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 text-center max-w-md">
+              Ask me anything about your connected workspaces. I'll find answers backed by your Notion docs.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
+              {suggestedPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => setInputValue(prompt)}
+                  className="text-left rounded-lg border border-slate-200 dark:border-slate-700 p-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
+            {messages.map((message) => (
+              <Message
+                key={message.id}
+                role={message.role}
+                content={message.content}
+                citations={message.citations}
+                timestamp={message.timestamp}
+              />
+            ))}
+            {isLoading && <TypingIndicator />}
+            <div ref={bottomRef} />
+          </div>
+        )}
       </ScrollArea>
 
       {/* Input */}

@@ -1,4 +1,4 @@
-import { FileText, Database, Clock, ChevronRight, LogOut, Shield, Sun, Moon, MessageSquare } from 'lucide-react';
+import { FileText, Database, Clock, ChevronRight, LogOut, Shield, Sun, Moon, MessageSquare, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
@@ -19,16 +19,20 @@ const mockProjects: RecentProject[] = [
   { id: '3', name: 'Sprint Planning Notes', lastAnalyzed: '1 day ago', status: 'in-progress' },
 ];
 
-export function Sidebar() {
+interface SidebarContentProps {
+  onNavigate?: () => void;
+}
+
+export function SidebarContent({ onNavigate }: SidebarContentProps) {
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const isAdmin = useIsAdmin();
 
   return (
     <div className="w-80 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 h-screen overflow-y-auto p-6 flex flex-col">
       {/* Logo + Theme Toggle */}
       <div className="mb-8 flex items-start justify-between">
-        <Link to="/" className="block">
+        <Link to="/" onClick={onNavigate} className="block">
           <h1 className="text-2xl font-bold text-purple-700 dark:text-purple-400">WorkMate</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Your AI Work Assistant</p>
         </Link>
@@ -38,7 +42,7 @@ export function Sidebar() {
           onClick={toggleTheme}
           className="h-8 w-8 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
         >
-          {theme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          {resolvedTheme === 'light' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
         </Button>
       </div>
 
@@ -109,14 +113,24 @@ export function Sidebar() {
       <div className="mt-4 space-y-1">
         <Link
           to="/"
+          onClick={onNavigate}
           className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
         >
           <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           Chat
         </Link>
+        <Link
+          to="/settings"
+          onClick={onNavigate}
+          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+        >
+          <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+          Settings
+        </Link>
         {isAdmin && (
           <Link
             to="/admin"
+            onClick={onNavigate}
             className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
           >
             <Shield className="h-4 w-4 text-purple-600 dark:text-purple-400" />
@@ -148,7 +162,7 @@ export function Sidebar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={logout}
+              onClick={() => { logout(); onNavigate?.(); }}
               className="h-8 w-8 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
               <LogOut className="h-4 w-4" />
@@ -158,4 +172,8 @@ export function Sidebar() {
       )}
     </div>
   );
+}
+
+export function Sidebar() {
+  return <SidebarContent />;
 }
