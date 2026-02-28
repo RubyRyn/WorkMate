@@ -5,6 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 import type { User } from "../../types/auth";
 import {
   clearToken,
@@ -43,7 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = getToken();
     if (token) {
       fetchCurrentUser()
-        .then(setUser)
+        .then((u) => {
+          setUser(u);
+          if (tokenFromUrl) toast.success(`Welcome back, ${u.name}!`);
+        })
         .catch(() => clearToken())
         .finally(() => setLoading(false));
     } else {
@@ -59,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await logoutService();
     setUser(null);
+    toast.success("Signed out successfully");
   };
 
   return (
