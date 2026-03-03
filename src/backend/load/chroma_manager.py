@@ -19,9 +19,21 @@ class ChromaManager:
         self.client = chromadb.PersistentClient(path=db_path)
 
         # Get or Create Collection
-        self.collection = self.client.get_or_create_collection(
-            name=collection_name, embedding_function=self.embedder
-        )
+        try:
+            self.collection = self.client.get_or_create_collection(
+                name=collection_name, embedding_function=self.embedder
+            )
+        except ValueError as e:
+            if "Embedding function conflict" in str(e):
+                print(
+                    f"⚠️ Embedding function conflict. Recreating collection '{collection_name}'..."
+                )
+                self.client.delete_collection(collection_name)
+                self.collection = self.client.get_or_create_collection(
+                    name=collection_name, embedding_function=self.embedder
+                )
+            else:
+                raise e
         print(
             f"✅ Connected to ChromaDB at '{db_path}' (Collection: '{collection_name}') with Google Embedder"
         )
