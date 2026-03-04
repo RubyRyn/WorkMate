@@ -23,6 +23,9 @@ class GoogleEmbedder(EmbeddingFunction):
 
         genai.configure(api_key=api_key)
 
+    def name(self) -> str:
+        return "google_embedder"
+
     def __call__(self, input: Documents) -> Embeddings:
         """
         Embeds a list of documents using the Google Generative AI API.
