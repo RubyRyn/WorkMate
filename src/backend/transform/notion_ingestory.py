@@ -104,7 +104,7 @@ class NotionIngestor:
 # --- Execution ---
 if __name__ == "__main__":
     # The instantiation is clean, and the parameters can easily be swapped for testing.
-    ingestor = NotionIngestor(file_path="notion_data.json", chunk_size=1000)
+    ingestor = NotionIngestor(file_path="input/notion_data.json", chunk_size=1000)
     ingestor.db.reset()
     ingestor.run_pipeline()
 
