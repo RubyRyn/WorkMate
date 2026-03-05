@@ -1,9 +1,19 @@
+import logging
+import os
+
 import chromadb
+from dotenv import load_dotenv
+from google import genai
+
 from src.backend.load.google_embedder import GoogleEmbedder
+
+load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 class ChromaManager:
-    def __init__(self, db_path="../chroma_db", collection_name="notion_docs"):
+    def __init__(self, db_path="chroma_db", collection_name="notion_docs"):
         """
         Initialize the ChromaDB client and collection.
         :param db_path: Path to the persistent database directory.
@@ -11,9 +21,6 @@ class ChromaManager:
         """
         self.db_path = db_path
         self.collection_name = collection_name
-
-        # Initialize Google Embedder
-        self.embedder = GoogleEmbedder()
 
         # Initialize Persistent Client
         self.client = chromadb.PersistentClient(path=db_path)
@@ -35,7 +42,7 @@ class ChromaManager:
             else:
                 raise e
         print(
-            f"✅ Connected to ChromaDB at '{db_path}' (Collection: '{collection_name}') with Google Embedder"
+            f"✅ Connected to ChromaDB at '{db_path}' (Collection: '{collection_name}')"
         )
 
     # Metadata is to also be stored in the postgres database, so we can query it separately if needed.
@@ -55,9 +62,11 @@ class ChromaManager:
     def query(self, query_text, n_results=2, where=None):
         """
         Search the collection for relevant documents.
+        Uses ChromaDB's default embedding function (all-MiniLM-L6-v2)
+        to match the stored 384-dimension vectors.
         :param query_text: The question or text to search for.
         :param n_results: Number of results to return.
-        :param where: (Optional) Metadata filter dictionary (e.g., {"tag": "security"}).
+        :param where: (Optional) Metadata filter dictionary.
         :return: A dictionary of results.
         """
         print(f"🔍 Querying: '{query_text}'...")
