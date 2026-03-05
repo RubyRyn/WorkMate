@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     DATABASE_URL: str = "sqlite:///./workmate.db"
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()
