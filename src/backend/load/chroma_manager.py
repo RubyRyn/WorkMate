@@ -47,18 +47,25 @@ class ChromaManager:
         )
 
     # Metadata is to also be stored in the postgres database, so we can query it separately if needed.
-    def add_documents(self, documents, metadatas, ids):
+    def add_documents(self, documents, metadatas, ids, batch_size=20):
         """
-        Add documents to the collection.
+        Add documents to the collection in batches.
         :param documents: List of text strings.
         :param metadatas: List of dictionaries containing metadata.
         :param ids: List of unique string IDs.
+        :param batch_size: Number of documents per batch.
         """
-        try:
-            self.collection.add(documents=documents, metadatas=metadatas, ids=ids)
-            print(f"✅ Successfully added {len(documents)} documents.")
-        except Exception as e:
-            print(f"❌ Error adding documents: {e}")
+        total = len(documents)
+        for i in range(0, total, batch_size):
+            batch_docs = documents[i:i + batch_size]
+            batch_meta = metadatas[i:i + batch_size]
+            batch_ids = ids[i:i + batch_size]
+            try:
+                self.collection.add(documents=batch_docs, metadatas=batch_meta, ids=batch_ids)
+                print(f"✅ Added batch {i // batch_size + 1} ({len(batch_docs)} docs, {i + len(batch_docs)}/{total})")
+            except Exception as e:
+                print(f"❌ Error adding batch {i // batch_size + 1}: {e}")
+                raise e
 
     def query(self, query_text, n_results=2, where=None):
         """
@@ -83,7 +90,9 @@ class ChromaManager:
         Useful for testing/dev environments.
         """
         self.client.delete_collection(self.collection_name)
-        self.collection = self.client.get_or_create_collection(self.collection_name)
+        self.collection = self.client.get_or_create_collection(
+            name=self.collection_name, embedding_function=self.embedder
+        )
         print(f"⚠️ Collection '{self.collection_name}' has been reset.")
 
 

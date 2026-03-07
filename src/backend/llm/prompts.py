@@ -13,7 +13,7 @@ CRITICAL RULES:
 - Always include citations in the required format.
 
 OUTPUT FORMAT (exact):
-Answer: <1-3 sentences>
+Answer: <a thorough, multi-sentence answer that fully addresses the question>
 Sources:
 - <chunk_id> | <page_title>
 Confidence: <High/Medium/Low>
