@@ -1,5 +1,5 @@
-import { FileText, Database, Clock, ChevronRight, LogOut, Shield } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { FileText, Database, Clock, ChevronRight, LogOut, Shield, MessageSquare } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,7 @@ const mockProjects: RecentProject[] = [
 export function Sidebar() {
   const { user, logout } = useAuth();
   const isAdmin = useIsAdmin();
+  const location = useLocation();
 
   return (
     <div className="w-80 bg-slate-50 border-r border-slate-200 h-screen overflow-y-auto p-6 flex flex-col">
@@ -93,18 +94,33 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Admin Link */}
-      {isAdmin && (
-        <div className="mt-4">
+      {/* Navigation Links */}
+      <div className="mt-4 space-y-1">
+        <Link
+          to="/"
+          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+            location.pathname === '/'
+              ? 'bg-purple-100 text-purple-700'
+              : 'text-slate-700 hover:bg-slate-200'
+          }`}
+        >
+          <MessageSquare className="h-4 w-4 text-purple-600" />
+          Chat
+        </Link>
+        {isAdmin && (
           <Link
             to="/admin"
-            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 transition-colors"
+            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              location.pathname === '/admin'
+                ? 'bg-purple-100 text-purple-700'
+                : 'text-slate-700 hover:bg-slate-200'
+            }`}
           >
             <Shield className="h-4 w-4 text-purple-600" />
             User Management
           </Link>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* User Info */}
       {user && (
