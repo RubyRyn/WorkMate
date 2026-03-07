@@ -40,3 +40,7 @@ notion_data.json
 
 # SQLite database
 workmate.db
+
+# Antigravity SKILLS
+.antigravity/
+CLAUDE.md
