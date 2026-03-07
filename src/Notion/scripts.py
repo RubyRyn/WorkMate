@@ -16,7 +16,10 @@ documents = fetcher.fetch_all()
 # db_rows = fetcher.fetch_databases_only()
 
 # Save to JSON for later use
-fetcher.save_to_json(documents, "input/notion_data.json")
+from pathlib import Path
+
+data_dir = Path(__file__).resolve().parent.parent / "data"
+fetcher.save_to_json(documents, str(data_dir / "notion_data.json"))
 
 # Each document has:
 for doc in documents:
