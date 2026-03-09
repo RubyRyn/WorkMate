@@ -18,9 +18,7 @@ def get_chroma_manager() -> ChromaManager:
     global _chroma_manager
     if _chroma_manager is None:
         try:
-            _chroma_manager = ChromaManager(
-                db_path="chroma_db", collection_name="notion_docs"
-            )
+            _chroma_manager = ChromaManager()
         except Exception as e:
             logger.error(f"Failed to initialize ChromaManager: {e}")
             raise HTTPException(
