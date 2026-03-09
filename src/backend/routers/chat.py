@@ -63,18 +63,17 @@ async def ask_question(
                 if results.get("metadatas")
                 else [{}] * len(docs)
             )
-            ids = results.get("ids", [[]])[0] if results.get("ids") else []
-            for i, (doc, meta) in enumerate(zip(docs, metas)):
-                chunk_id = ids[i] if i < len(ids) else f"chunk_{i}"
-                chunks.append(
-                    {
-                        "chunk_id": chunk_id,
-                        "page_title": meta.get("title", "Unknown Source"),
-                        "section": meta.get("section", ""),
-                        "paragraph": meta.get("paragraph", ""),
-                        "text": doc,
-                    }
-                )
+            ids = (
+                results["ids"][0]
+                if results.get("ids")
+                else [str(i) for i in range(len(docs))]
+            )
+            for doc, meta, doc_id in zip(docs, metas, ids):
+                chunks.append({
+                    "chunk_id": doc_id,
+                    "page_title": meta.get("title", "Unknown Source"),
+                    "text": doc,
+                })
 
         # Step 3: Generation
         answer = gemini.ask_workmate(

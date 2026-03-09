@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 # Load .env once when this module is imported
 load_dotenv()
 
-DEFAULT_GEMINI_MODEL_ID = os.getenv("GEMINI_MODEL_ID", "gemini-3-flash-preview")
+DEFAULT_GEMINI_MODEL_ID = os.getenv("GEMINI_MODEL_ID", "gemini-2.5-flash")
 
 
 def get_required_env(key: str) -> str:
