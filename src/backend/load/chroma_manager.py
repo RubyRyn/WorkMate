@@ -11,9 +11,13 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
+# Resolve the project root (3 levels up from src/backend/load/chroma_manager.py)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
+DEFAULT_DB_PATH = os.path.join(PROJECT_ROOT, "workmate_db")
+
 
 class ChromaManager:
-    def __init__(self, db_path="chroma_db", collection_name="notion_docs"):
+    def __init__(self, db_path=DEFAULT_DB_PATH, collection_name="notion_docs"):
         """
         Initialize the ChromaDB client and collection.
         :param db_path: Path to the persistent database directory.
