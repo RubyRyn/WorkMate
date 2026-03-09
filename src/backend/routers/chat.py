@@ -56,8 +56,8 @@ async def ask_question(
         # Step 1: Retrieval
         results = chroma.query(request.question, n_results=3)
 
-        # Step 2: Augmentation – build the context string
-        context_parts = []
+        # Step 2: Augmentation – extract chunks
+        chunks = []
         if results and results.get("documents") and results["documents"][0]:
             docs = results["documents"][0]
             metas = (
@@ -65,18 +65,24 @@ async def ask_question(
                 if results.get("metadatas")
                 else [{}] * len(docs)
             )
-            for doc, meta in zip(docs, metas):
-                title = meta.get("title", "Unknown Source")
-                context_parts.append(f"[{title}]: {doc}")
-
-        context_string = "\n\n".join(context_parts)
-        if not context_string:
-            context_string = "No relevant context found in Notion database."
+            ids = results.get("ids", [[]])[0] if results.get("ids") else []
+            for i, (doc, meta) in enumerate(zip(docs, metas)):
+                chunk_id = ids[i] if i < len(ids) else f"chunk_{i}"
+                chunks.append(
+                    {
+                        "chunk_id": chunk_id,
+                        "page_title": meta.get("title", "Unknown Source"),
+                        "section": meta.get("section", ""),
+                        "paragraph": meta.get("paragraph", ""),
+                        "text": doc,
+                    }
+                )
 
         # Step 3: Generation
         answer = gemini.ask_workmate(
-            notion_context=context_string,
+            chunks=chunks,
             user_question=request.question,
+            debug=request.debug,
         )
 
         return ChatResponse(answer=answer)
