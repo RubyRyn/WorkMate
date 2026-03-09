@@ -1,57 +1,20 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Send, Paperclip } from 'lucide-react';
 import { Message } from './Message';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
-import { ScrollArea } from './ui/scroll-area';
 import { sendChatMessage } from '../../services/api';
 import type { ChatMessage } from '../../types/chat';
 
-const initialMessages: ChatMessage[] = [
-  {
-    id: '1',
-    role: 'user',
-    content: 'Can you summarize the key features from our Q1 product roadmap?',
-  },
-  {
-    id: '2',
-    role: 'assistant',
-    content: `Based on your Q1 product roadmap, here are the key features planned:
-
-**1. Advanced Analytics Dashboard** [1]
-The team is planning to build a comprehensive analytics dashboard with real-time data visualization and customizable reports.
-
-**2. Mobile App Integration** [2]
-A native mobile application for both iOS and Android is scheduled for development, enabling users to access core features on the go.
-
-**3. API Enhancements** [3]
-Major improvements to the REST API including better rate limiting, webhook support, and enhanced documentation.
-
-These features align with the company's strategic goals of improving user engagement and expanding platform capabilities.`,
-    citations: [
-      {
-        number: 1,
-        source: 'Q1 Feature Roadmap - Analytics Section',
-        excerpt: 'Priority 1: Develop advanced analytics dashboard with customizable widgets and real-time data streaming capabilities',
-      },
-      {
-        number: 2,
-        source: 'Q1 Feature Roadmap - Mobile Strategy',
-        excerpt: 'Native mobile apps planned for Q1 release, focusing on core workflow features with offline support',
-      },
-      {
-        number: 3,
-        source: 'Engineering Docs - API Specifications',
-        excerpt: 'API v2.0 will include webhook subscriptions, improved rate limiting (10k req/hour), and comprehensive OpenAPI documentation',
-      },
-    ],
-  },
-];
-
 export function ChatWindow() {
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -69,6 +32,13 @@ export function ChatWindow() {
     try {
       const aiMessage = await sendChatMessage(inputValue);
       setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `Sorry, something went wrong. ${error instanceof Error ? error.message : 'Please try again.'}`,
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +53,7 @@ export function ChatWindow() {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto min-h-0">
         <div className="divide-y divide-slate-200">
           {messages.map((message) => (
             <Message
@@ -94,8 +64,9 @@ export function ChatWindow() {
             />
           ))}
           {isLoading && <Message role="assistant" content="" isLoading />}
+          <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Input */}
       <div className="border-t border-slate-200 p-4 bg-white">

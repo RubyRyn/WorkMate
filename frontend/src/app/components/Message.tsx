@@ -17,12 +17,22 @@ export function Message({ role, content, citations = [], isLoading = false }: Me
 
   if (isLoading) {
     return (
-      <div className="flex gap-4 p-6 bg-white">
-        <Skeleton className="w-8 h-8 rounded-full flex-shrink-0" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-5/6" />
+      <div className="flex gap-4 p-6 bg-slate-50">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-purple-600 text-white">
+          <Bot className="w-5 h-5" />
+        </div>
+        <div className="flex-1">
+          <div className="mb-1">
+            <span className="font-semibold text-sm text-slate-900">WorkMate</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="flex gap-1">
+              <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:0ms]" />
+              <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-2 h-2 bg-purple-500 rounded-full animate-bounce [animation-delay:300ms]" />
+            </div>
+            <span>Thinking...</span>
+          </div>
         </div>
       </div>
     );

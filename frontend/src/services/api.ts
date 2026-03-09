@@ -18,31 +18,23 @@ function authHeaders(): Record<string, string> {
  * when the Python backend is ready.
  */
 export async function sendChatMessage(message: string): Promise<ChatMessage> {
-  // --- Uncomment when backend is ready ---
-  // const res = await fetch(`${BASE_URL}/chat`, {
-  //   method: 'POST',
-  //   headers: authHeaders(),
-  //   body: JSON.stringify({ message }),
-  // });
-  // if (!res.ok) throw new Error(`Chat request failed: ${res.status}`);
-  // return res.json();
+  const res = await fetch(`${BASE_URL}/chat/ask`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ question: message }),
+  });
 
-  // Mock response (simulates ~2s latency)
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  if (!res.ok) {
+    const detail = await res.text().catch(() => res.statusText);
+    throw new Error(`Chat request failed (${res.status}): ${detail}`);
+  }
+
+  const data = await res.json();
 
   return {
-    id: (Date.now() + 1).toString(),
+    id: Date.now().toString(),
     role: 'assistant',
-    content: `I've analyzed your question about "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}".
-
-Based on the information in your connected Notion workspaces, here's what I found:
-
-This is a **simulated response** to demonstrate the chat interface. In a production environment, this would connect to your actual knowledge base and provide contextual answers with proper citations.
-
-Key points:
-- Real-time analysis of workspace data
-- Contextual understanding of your documents
-- Citation-backed responses for transparency`,
+    content: data.answer,
   };
 }
 
