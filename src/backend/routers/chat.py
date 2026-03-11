@@ -18,9 +18,7 @@ def get_chroma_manager() -> ChromaManager:
     global _chroma_manager
     if _chroma_manager is None:
         try:
-            _chroma_manager = ChromaManager(
-                db_path="chroma_db", collection_name="notion_docs"
-            )
+            _chroma_manager = ChromaManager()
         except Exception as e:
             logger.error(f"Failed to initialize ChromaManager: {e}")
             raise HTTPException(
@@ -56,7 +54,7 @@ async def ask_question(
         # Step 1: Retrieval
         results = chroma.query(request.question, n_results=3)
 
-        # Step 2: Augmentation – build the context string
+        # Step 2: Augmentation – extract chunks
         chunks = []
         if results and results.get("documents") and results["documents"][0]:
             docs = results["documents"][0]
@@ -81,6 +79,7 @@ async def ask_question(
         answer = gemini.ask_workmate(
             chunks=chunks,
             user_question=request.question,
+            debug=request.debug,
         )
 
         return ChatResponse(answer=answer)

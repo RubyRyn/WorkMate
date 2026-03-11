@@ -18,11 +18,9 @@ class GoogleEmbedder(EmbeddingFunction):
     def __init__(self, model_name="gemini-embedding-001"):
         self.model_name = model_name
 
-        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        api_key = os.getenv("GEMINI_KEY")
         if not api_key:
-            print(
-                "⚠️ WARNING: GEMINI_API_KEY or GOOGLE_API_KEY not found in environment."
-            )
+            print("⚠️ WARNING: GEMINI_KEY not found in environment.")
 
         self.client = genai.Client(api_key=api_key)
 

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     NOTION_TOKEN: str = ""
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

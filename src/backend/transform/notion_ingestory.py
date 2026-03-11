@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 from langchain_text_splitters import (
     MarkdownHeaderTextSplitter,
@@ -9,7 +8,7 @@ from src.backend.load.chroma_manager import ChromaManager
 
 # Default path resolving to src/data/notion_data.json
 DEFAULT_DATA_PATH = str(
-    Path(__file__).resolve().parent.parent.parent / "data" / "notion_data.json"
+    Path(__file__).resolve().parent.parent.parent / "data/notion_data.json"
 )
 
 

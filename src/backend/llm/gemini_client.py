@@ -20,15 +20,17 @@ class GeminiClient:
     """
 
     def __init__(self, model_id: Optional[str] = None):
-        api_key = get_required_env("GEMINI_API_KEY")
+        api_key = get_required_env("GEMINI_KEY")
         self.client = genai.Client(api_key=api_key)
         self.model_id = model_id or DEFAULT_GEMINI_MODEL_ID
 
-    def ask_workmate(self, chunks: List[Dict[str, Any]], user_question: str) -> str:
+    def ask_workmate(
+        self, chunks: List[Dict[str, Any]], user_question: str, debug: bool = False
+    ) -> str:
         """
         Generate an answer using ONLY the provided top-k context chunks.
         """
-        final_prompt = get_rag_prompt(chunks, user_question)
+        final_prompt = get_rag_prompt(chunks, user_question, debug)
 
         # Keep outputs grounded + stable
         cfg = types.GenerateContentConfig(
