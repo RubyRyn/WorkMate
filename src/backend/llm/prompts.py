@@ -23,6 +23,9 @@ def _format_chunks(chunks: List[Dict[str, Any]]) -> str:
     Build a clean, deterministic context block with explicit chunk IDs + page titles + section + paragraph.
     Each chunk must contain: chunk_id, page_title, text, (optionally section, paragraph)
     """
+    if not chunks:
+        return "CONTEXT CHUNKS:\n(None provided)"
+
     lines = ["CONTEXT CHUNKS:"]
     for i, ch in enumerate(chunks, start=1):
         chunk_id = ch.get("chunk_id", f"chunk_{i}")
@@ -61,10 +64,10 @@ def get_rag_prompt(
     {question}
 
     INSTRUCTIONS:
-    1) Answer ONLY using the context chunks above.
+    1) Answer ONLY using the information explicitly stated in the CONTEXT CHUNKS above.
     2) If multiple chunks mention the topic, prefer the most specific one.
-    3) If no chunk clearly answers, reply exactly: "I cannot find this in your Notion docs."
+    3) CRITICAL: If the CONTEXT CHUNKS do not contain the answer, or if the CONTEXT CHUNKS say "(None provided)", you MUST reply exactly: "I cannot find this in your Notion docs." DO NOT invent features, ideas, or files.
     4) Output MUST include inline citations for the source of its findings in the exact format: [Document name, section, paragraph] (section and paragraph are optional if not provided).{debug_instruction}
 
-    Remember: Do not use outside knowledge.
+    Remember: Do not guess. Do not use outside knowledge.
     """.strip()
