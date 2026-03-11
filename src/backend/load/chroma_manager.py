@@ -38,12 +38,11 @@ class ChromaManager:
         except ValueError as e:
             if "Embedding function conflict" in str(e):
                 print(
-                    f"⚠️ Embedding function conflict. Recreating collection '{collection_name}'..."
+                    f"⚠️ Embedding function conflict ignored. Re-using collection '{collection_name}'..."
                 )
-                self.client.delete_collection(collection_name)
-                self.collection = self.client.get_or_create_collection(
-                    name=collection_name, embedding_function=self.embedder
-                )
+                self.collection = self.client.get_collection(name=collection_name)
+                # Assign the embedding function manually as a workaround
+                self.collection._embedding_function = self.embedder
             else:
                 raise e
         print(
@@ -87,7 +86,9 @@ class ChromaManager:
         Useful for testing/dev environments.
         """
         self.client.delete_collection(self.collection_name)
-        self.collection = self.client.get_or_create_collection(self.collection_name)
+        self.collection = self.client.get_or_create_collection(
+            name=self.collection_name, embedding_function=self.embedder
+        )
         print(f"⚠️ Collection '{self.collection_name}' has been reset.")
 
 

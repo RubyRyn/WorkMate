@@ -26,19 +26,16 @@ class GoogleEmbedder(EmbeddingFunction):
 
     def __call__(self, input: Documents) -> Embeddings:
         """
-        Embeds a list of documents using the Google Generative AI API.
+        Embeds a list of documents using the Google Generative AI API, respecting rate limits.
         """
+        import time
+
         if not input:
             return []
 
         embeddings = []
-        # The API technically supports batch embedding, but testing document by document
-        # to ensure resilience and avoid potential limits for simple implementation
         for doc in input:
             if not doc.strip():
-                # Chroma requires an embedding even for empty strings in some cases,
-                # though we filter them out earlier. Provide a zero vector if needed,
-                # but better to let the API handle or skip.
                 continue
 
             try:
@@ -48,9 +45,10 @@ class GoogleEmbedder(EmbeddingFunction):
                     task_type="retrieval_document",
                 )
                 embeddings.append(result["embedding"])
+                # 100 requests per minute = 1.66 req/sec (so sleep ~0.65 to be safe)
+                time.sleep(0.65)
             except Exception as e:
                 print(f"❌ Error embedding document: {e}")
-                # Append a dummy embedding or handle error appropriately. Re-raising here.
                 raise e
 
         return embeddings
