@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -13,4 +15,8 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str = Field(
         ..., description="The generated context-aware answer from the Gemini LLM."
+    )
+    sources: Optional[list[str]] = Field(
+        default=None,
+        description="List of Notion page titles used as context for the answer.",
     )
