@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.backend.config import settings
 from src.backend.database import Base, engine
-from src.backend.routers import admin, auth, chat
+from src.backend.routers import admin, auth, chat, conversations, upload
 
 
 def create_app() -> FastAPI:
@@ -22,5 +22,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(admin.router)
     app.include_router(chat.router)
+    app.include_router(conversations.router)
+    app.include_router(upload.router)
 
     return app
