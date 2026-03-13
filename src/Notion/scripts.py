@@ -16,7 +16,7 @@ documents = fetcher.fetch_all()
 # db_rows = fetcher.fetch_databases_only()
 
 # Save to JSON for later use
-fetcher.save_to_json(documents, "input/notion_data.json")
+fetcher.save_to_json(documents, "../data/notion_data.json")
 
 # Each document has:
 for doc in documents:

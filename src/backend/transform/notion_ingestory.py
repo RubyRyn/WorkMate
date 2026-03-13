@@ -3,7 +3,7 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharac
 from src.backend.load.chroma_manager import ChromaManager
 
 class NotionIngestor:
-    def __init__(self, file_path="./notion_data.json", chunk_size=1000, chunk_overlap=200):
+    def __init__(self, file_path="./notion_data.json", chunk_size=500, chunk_overlap=100):
         """
         Initializes the ingestion pipeline, database connection, and splitters.
         """
@@ -23,6 +23,7 @@ class NotionIngestor:
             ("#", "Header 1"),
             ("##", "Header 2"),
             ("###", "Header 3"),
+            ("####", "Header 4"),
         ]
         self.markdown_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=headers_to_split_on
@@ -104,9 +105,11 @@ class NotionIngestor:
 # --- Execution ---
 if __name__ == "__main__":
     # The instantiation is clean, and the parameters can easily be swapped for testing.
-    ingestor = NotionIngestor(file_path="input/notion_data.json", chunk_size=1000)
+    ingestor = NotionIngestor(file_path="../../data/notion_data.json")
     ingestor.db.reset()
     ingestor.run_pipeline()
 
-    result = ingestor.db.query("What is the purpose of this document?", n_results=5)
+    #result = ingestor.db.query("What is the purpose of this document?", n_results=5)
+    result = ingestor.db.query("What are the main features of the project?", n_results=3)
+    
     print("Query Results:", result["documents"][0])
