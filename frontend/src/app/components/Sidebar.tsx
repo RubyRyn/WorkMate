@@ -4,6 +4,7 @@ import {
   ChevronRight,
   LogOut,
   Shield,
+  Settings,
   MessageSquare,
   Plus,
   Trash2,
@@ -303,6 +304,17 @@ export function Sidebar({
           >
             <MessageSquare className="h-4 w-4 text-purple-600 dark:text-purple-400" />
             Chat
+          </Link>
+          <Link
+            to="/settings"
+            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              location.pathname === '/settings'
+                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Settings className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            Settings
           </Link>
           {isAdmin && (
             <Link
