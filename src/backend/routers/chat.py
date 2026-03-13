@@ -26,8 +26,8 @@ async def ask_question(
     4. Calls Gemini LLM using the WorkMate prompt.
     """
     try:
-        # Step 1: Initial Retrieval
-        results = chroma.query(request.question, n_results=5)
+        # Step 1: Initial Retrieval (Fetch 10 to balance page coverage and API limits)
+        results = chroma.query(request.question, n_results=10)
 
         # Collect initial results into a dict keyed by chunk ID for deduplication
         seen_ids = set()
@@ -51,7 +51,6 @@ async def ask_question(
                 if chunk_id not in seen_ids:
                     seen_ids.add(chunk_id)
                     chunks_with_meta.append((doc, meta, chunk_id))
-                    source_titles.add(meta.get("title", "Unknown Source"))
 
         # Step 2: Sibling Expansion — only for very short chunks (likely incomplete)
         parent_ids_to_expand = set()
@@ -72,35 +71,43 @@ async def ask_question(
                     if chunk_id not in seen_ids:
                         seen_ids.add(chunk_id)
                         chunks_with_meta.append((doc, meta, chunk_id))
-                        source_titles.add(meta.get("title", "Unknown Source"))
 
-        # Step 3: Build formatted context list for Gemini
-        chunks = []
-        total_chars = 0
+        # Step 3: Build formatted context list
+        all_chunks = []
         for doc, meta, chunk_id in chunks_with_meta:
             clean_doc = doc.strip().replace("\r\n", "\n")
-
-            # Respect context cap
-            if total_chars + len(clean_doc) > MAX_CONTEXT_CHARS:
-                remaining = MAX_CONTEXT_CHARS - total_chars
-                if remaining > 100:
-                    clean_doc = clean_doc[:remaining] + "... [truncated]"
-                else:
-                    break
-
-            chunks.append({
+            all_chunks.append({
                 "chunk_id": chunk_id,
                 "page_title": meta.get("title", "Unknown Source"),
                 "section": meta.get("parent_title", ""),
                 "text": clean_doc,
             })
-            total_chars += len(clean_doc)
+            
+        # Step 4: LLM Re-ranking (Filter out irrelevant project proposals)
+        filtered_chunks = gemini.filter_chunks(all_chunks, request.question)
+        
+        # Enforce maximum of 3 chunks and context cap
+        final_chunks = []
+        total_chars = 0
+        for chunk in filtered_chunks[:3]:
+            # Respect context cap
+            text = chunk["text"]
+            if total_chars + len(text) > MAX_CONTEXT_CHARS:
+                remaining = MAX_CONTEXT_CHARS - total_chars
+                if remaining > 100:
+                    chunk["text"] = text[:remaining] + "... [truncated]"
+                else:
+                    break
+                    
+            final_chunks.append(chunk)
+            source_titles.add(chunk["page_title"])
+            total_chars += len(chunk["text"])
             
         sources_list = sorted(source_titles)
 
-        # Step 4: Generation
+        # Step 5: Generation using only the filtered, relevant chunks
         answer = gemini.ask_workmate(
-            chunks=chunks,
+            chunks=final_chunks,
             user_question=request.question,
             debug=request.debug,
         )
@@ -108,6 +115,8 @@ async def ask_question(
         return ChatResponse(
             answer=answer,
             sources=sources_list,
+            chunks=final_chunks,
+            unfiltered_chunks=all_chunks,
         )
 
     except Exception as e:

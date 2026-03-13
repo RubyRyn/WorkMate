@@ -20,3 +20,11 @@ class ChatResponse(BaseModel):
         default=None,
         description="List of Notion page titles used as context for the answer.",
     )
+    chunks: Optional[list[dict]] = Field(
+        default=None,
+        description="The raw context chunks sent to the LLM.",
+    )
+    unfiltered_chunks: Optional[list[dict]] = Field(
+        default=None,
+        description="The raw context chunks retrieved from ChromaDB before LLM filtering.",
+    )

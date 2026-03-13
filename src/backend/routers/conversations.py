@@ -12,6 +12,7 @@ from src.backend.dependencies.services import get_chroma_manager, get_gemini_cli
 from src.backend.load.chroma_manager import ChromaManager
 from src.backend.llm.gemini_client import GeminiClient
 from src.backend.models.conversation import Conversation, MessageRecord
+from src.backend.routers.chat import MAX_CONTEXT_CHARS
 from src.backend.models.user import User
 from src.backend.schemas.conversation import (
     ConversationDetail,
@@ -100,32 +101,70 @@ async def send_message(
 
     # RAG pipeline
     try:
-        results = chroma.query(request.question, n_results=3)
+        # Step 1: Initial Retrieval (Fetch 10 to balance page coverage and API limits)
+        results = chroma.query(request.question, n_results=10)
 
-        chunks = []
+        seen_ids = set()
+        chunks_with_meta = []
+
         if results and results.get("documents") and results["documents"][0]:
             docs = results["documents"][0]
-            metas = (
-                results["metadatas"][0]
-                if results.get("metadatas")
-                else [{}] * len(docs)
-            )
-            ids = (
-                results["ids"][0]
-                if results.get("ids")
-                else [str(i) for i in range(len(docs))]
-            )
-            for doc, meta, doc_id in zip(docs, metas, ids):
-                chunks.append(
-                    {
-                        "chunk_id": doc_id,
-                        "page_title": meta.get("title", "Unknown Source"),
-                        "text": doc,
-                    }
-                )
+            metas = results.get("metadatas", [{}])[0] if results.get("metadatas") else [{}] * len(docs)
+            ids = results.get("ids", [[]])[0] if results.get("ids") else [str(i) for i in range(len(docs))]
+
+            for doc, meta, chunk_id in zip(docs, metas, ids):
+                if chunk_id not in seen_ids:
+                    seen_ids.add(chunk_id)
+                    chunks_with_meta.append((doc, meta, chunk_id))
+
+        # Step 2: Sibling Expansion
+        parent_ids_to_expand = {
+            meta.get("parent_id")
+            for doc_text, meta, _ in chunks_with_meta
+            if len(doc_text.strip()) < 100 and meta.get("parent_id")
+        }
+
+        for parent_id in parent_ids_to_expand:
+            sibling_results = chroma.get_by_parent(parent_id, limit=5)
+            if sibling_results and sibling_results.get("documents"):
+                sib_docs = sibling_results["documents"]
+                sib_metas = sibling_results.get("metadatas", [{}] * len(sib_docs))
+                sib_ids = sibling_results.get("ids", [str(i) for i in range(len(sib_docs))])
+
+                for doc, meta, chunk_id in zip(sib_docs, sib_metas, sib_ids):
+                    if chunk_id not in seen_ids:
+                        seen_ids.add(chunk_id)
+                        chunks_with_meta.append((doc, meta, chunk_id))
+
+        # Step 3: Build formatted context list
+        all_chunks = []
+        for doc, meta, chunk_id in chunks_with_meta:
+            all_chunks.append({
+                "chunk_id": chunk_id,
+                "page_title": meta.get("title", "Unknown Source"),
+                "section": meta.get("parent_title", ""),
+                "text": doc.strip().replace("\r\n", "\n"),
+            })
+
+        # Step 4: LLM Re-ranking
+        filtered_chunks = gemini.filter_chunks(all_chunks, request.question)
+        
+        # Enforce max 3 chunks and context cap
+        final_chunks = []
+        total_chars = 0
+        for chunk in filtered_chunks[:3]:
+            text = chunk["text"]
+            if total_chars + len(text) > MAX_CONTEXT_CHARS:
+                remaining = MAX_CONTEXT_CHARS - total_chars
+                if remaining > 100:
+                    chunk["text"] = text[:remaining] + "... [truncated]"
+                else:
+                    break
+            final_chunks.append(chunk)
+            total_chars += len(chunk["text"])
 
         answer = gemini.ask_workmate(
-            chunks=chunks,
+            chunks=final_chunks,
             user_question=request.question,
             debug=request.debug,
             conversation_history=conversation_history,
@@ -208,31 +247,66 @@ async def stream_message(
 
     # RAG retrieval
     try:
-        results = chroma.query(request.question, n_results=3)
-        chunks = []
+        results = chroma.query(request.question, n_results=10)
+
+        seen_ids = set()
+        chunks_with_meta = []
+
         if results and results.get("documents") and results["documents"][0]:
             docs = results["documents"][0]
-            metas = (
-                results["metadatas"][0]
-                if results.get("metadatas")
-                else [{}] * len(docs)
-            )
-            ids = (
-                results["ids"][0]
-                if results.get("ids")
-                else [str(i) for i in range(len(docs))]
-            )
-            for doc, meta, doc_id in zip(docs, metas, ids):
-                chunks.append(
-                    {
-                        "chunk_id": doc_id,
-                        "page_title": meta.get("title", "Unknown Source"),
-                        "text": doc,
-                    }
-                )
+            metas = results.get("metadatas", [{}])[0] if results.get("metadatas") else [{}] * len(docs)
+            ids = results.get("ids", [[]])[0] if results.get("ids") else [str(i) for i in range(len(docs))]
+
+            for doc, meta, chunk_id in zip(docs, metas, ids):
+                if chunk_id not in seen_ids:
+                    seen_ids.add(chunk_id)
+                    chunks_with_meta.append((doc, meta, chunk_id))
+
+        parent_ids_to_expand = {
+            meta.get("parent_id")
+            for doc_text, meta, _ in chunks_with_meta
+            if len(doc_text.strip()) < 100 and meta.get("parent_id")
+        }
+
+        for parent_id in parent_ids_to_expand:
+            sibling_results = chroma.get_by_parent(parent_id, limit=5)
+            if sibling_results and sibling_results.get("documents"):
+                sib_docs = sibling_results["documents"]
+                sib_metas = sibling_results.get("metadatas", [{}] * len(sib_docs))
+                sib_ids = sibling_results.get("ids", [str(i) for i in range(len(sib_docs))])
+
+                for doc, meta, chunk_id in zip(sib_docs, sib_metas, sib_ids):
+                    if chunk_id not in seen_ids:
+                        seen_ids.add(chunk_id)
+                        chunks_with_meta.append((doc, meta, chunk_id))
+
+        all_chunks = []
+        for doc, meta, chunk_id in chunks_with_meta:
+            all_chunks.append({
+                "chunk_id": chunk_id,
+                "page_title": meta.get("title", "Unknown Source"),
+                "section": meta.get("parent_title", ""),
+                "text": doc.strip().replace("\r\n", "\n"),
+            })
+
+        filtered_chunks = gemini.filter_chunks(all_chunks, request.question)
+        
+        final_chunks = []
+        total_chars = 0
+        for chunk in filtered_chunks[:3]:
+            text = chunk["text"]
+            if total_chars + len(text) > MAX_CONTEXT_CHARS:
+                remaining = MAX_CONTEXT_CHARS - total_chars
+                if remaining > 100:
+                    chunk["text"] = text[:remaining] + "... [truncated]"
+                else:
+                    break
+            final_chunks.append(chunk)
+            total_chars += len(chunk["text"])
+
     except Exception as e:
         logger.error(f"RAG retrieval error: {e}")
-        chunks = []
+        final_chunks = []
 
     # Load conversation history (last 6 messages before the new user message)
     conversation_history = [
@@ -244,7 +318,7 @@ async def stream_message(
         full_answer = ""
         try:
             async for text_chunk in gemini.ask_workmate_stream(
-                chunks=chunks,
+                chunks=final_chunks,
                 user_question=request.question,
                 debug=request.debug,
                 conversation_history=conversation_history,
@@ -281,7 +355,7 @@ async def stream_message(
                     "title": c.get("page_title", "Unknown Source"),
                     "excerpt": (c.get("text") or "")[:200],
                 }
-                for c in chunks
+                for c in final_chunks
             ]
         yield {
             "data": json.dumps(

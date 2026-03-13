@@ -8,8 +8,8 @@ from typing import List, Dict, Any, Optional
 from google import genai
 from google.genai import types
 
-from .config import DEFAULT_GEMINI_MODEL_ID, get_required_env
-from .prompts import WORKMATE_SYSTEM_INSTRUCTION, get_rag_prompt, get_rag_prompt_with_history
+from .config import DEFAULT_GEMINI_MODEL_ID
+from . import prompts
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,72 @@ class GeminiClient:
     """
 
     def __init__(self, model_id: Optional[str] = None):
-        api_key = get_required_env("GEMINI_KEY")
+        import os
+        api_key = os.getenv("GEMINI_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("No Gemini API key found. Set GEMINI_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY.")
+            
         self.client = genai.Client(api_key=api_key)
         self.model_id = model_id or DEFAULT_GEMINI_MODEL_ID
+
+    def filter_chunks(
+        self, chunks: List[Dict[str, Any]], user_question: str
+    ) -> List[Dict[str, Any]]:
+        """
+        LLM Re-ranking: Asks Gemini to filter out irrelevant chunks before generation.
+        """
+        if not chunks:
+            return []
+
+        prompt = prompts.get_filter_prompt(chunks, user_question)
+        cfg = types.GenerateContentConfig(
+            system_instruction=prompts.FILTER_SYSTEM_INSTRUCTION,
+            temperature=0.0,  # Zero precision for extraction
+            max_output_tokens=100,
+        )
+
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_id,
+                contents=prompt,
+                config=cfg,
+            )
+            output = getattr(response, "text", "") or ""
+            print(f"🧠 Re-ranker Output: {output}")
+            
+            if "NONE" in output.upper():
+                print("🧠 Re-ranker kept 0 chunks.")
+                return []
+                
+            # Parse the output safely: sometimes Gemini returns a clean comma-separated list of UUIDs
+            # But sometimes it's lazy and returns just the first part e.g. "30, 4f" instead of "302f24..."
+            filtered_chunks = []
+            output_parts = [p.strip() for p in output.split(",") if p.strip()]
+            
+            for chunk in chunks:
+                chunk_id = str(chunk["chunk_id"])
+                
+                # Check 1: Is the full chunk_id anywhere in the raw output string?
+                if chunk_id in output:
+                    filtered_chunks.append(chunk)
+                    continue
+                    
+                # Check 2: Did the LLM abbreviate the IDs? Check each comma-separated part.
+                for part in output_parts:
+                    if len(part) >= 2 and chunk_id.startswith(part):
+                        filtered_chunks.append(chunk)
+                        break
+            
+            print(f"🧠 Re-ranker kept {len(filtered_chunks)}/{len(chunks)} chunks.")
+            
+            # Fallback to all chunks if zero were matched but it didn't explicitly say "NONE"
+            if not filtered_chunks:
+                 return chunks
+            return filtered_chunks
+            
+        except Exception as e:
+            logger.warning(f"⚠️ Re-ranking failed (falling back to all chunks): {e}")
+            return chunks
 
     def ask_workmate(
         self,
@@ -35,15 +98,15 @@ class GeminiClient:
         Generate an answer using ONLY the provided top-k context chunks.
         """
         if conversation_history:
-            final_prompt = get_rag_prompt_with_history(
+            final_prompt = prompts.get_rag_prompt_with_history(
                 chunks, user_question, conversation_history, debug
             )
         else:
-            final_prompt = get_rag_prompt(chunks, user_question, debug)
+            final_prompt = prompts.get_rag_prompt(chunks, user_question, debug)
 
         # Keep outputs grounded + stable
         cfg = types.GenerateContentConfig(
-            system_instruction=WORKMATE_SYSTEM_INSTRUCTION,
+            system_instruction=prompts.WORKMATE_SYSTEM_INSTRUCTION,
             temperature=0.2,
             max_output_tokens=1024,
         )
@@ -81,14 +144,14 @@ class GeminiClient:
         Yields text chunks as they arrive.
         """
         if conversation_history:
-            final_prompt = get_rag_prompt_with_history(
+            final_prompt = prompts.get_rag_prompt_with_history(
                 chunks, user_question, conversation_history, debug
             )
         else:
-            final_prompt = get_rag_prompt(chunks, user_question, debug)
+            final_prompt = prompts.get_rag_prompt(chunks, user_question, debug)
 
         cfg = types.GenerateContentConfig(
-            system_instruction=WORKMATE_SYSTEM_INSTRUCTION,
+            system_instruction=prompts.WORKMATE_SYSTEM_INSTRUCTION,
             temperature=0.2,
             max_output_tokens=1024,
         )

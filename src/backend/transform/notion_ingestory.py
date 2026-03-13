@@ -122,11 +122,10 @@ class NotionIngestor:
         if not content.strip():
             return [], [], []
 
-        # Logical Split (Extract Headers)
-        md_splits = self.markdown_splitter.split_text(content)
-
         # Physical Split (Enforce Size Limits)
-        physical_splits = self.text_splitter.split_documents(md_splits)
+        # We skip MarkdownHeaderTextSplitter because it has a known bug of dropping 
+        # unheadered text at the end of long documents.
+        physical_splits = self.text_splitter.create_documents([content])
 
         # Merge very short chunks (< 50 chars) into the next chunk
         # This prevents tiny fragments like "Checkpoint #1 Slideshow" from
@@ -142,14 +141,15 @@ class NotionIngestor:
                     split.page_content = carry_over + split.page_content
                     carry_over = ""
                 merged_splits.append(split)
-        # If there's leftover carry_over, append to the last chunk
-        if carry_over and merged_splits:
-            merged_splits[-1].page_content += "\n" + carry_over.strip()
-        elif carry_over:
-            # Edge case: all chunks were tiny, keep them as one
-            if physical_splits:
-                physical_splits[0].page_content = carry_over.strip()
-                merged_splits.append(physical_splits[0])
+        # If there's leftover carry_over at the very end of the file
+        if carry_over:
+            if merged_splits:
+                # Append the trailing short text to the last valid chunk
+                merged_splits[-1].page_content += "\n" + carry_over.strip()
+            elif physical_splits:
+                # Edge case: the entire document was just one tiny <50 char string
+                physical_splits[-1].page_content = carry_over.strip()
+                merged_splits.append(physical_splits[-1])
 
         physical_splits = merged_splits
 
@@ -223,7 +223,7 @@ class NotionIngestor:
 # --- Execution ---
 if __name__ == "__main__":
     # The instantiation is clean, and the parameters can easily be swapped for testing.
-    ingestor = NotionIngestor(chunk_size=1000)
+    ingestor = NotionIngestor(file_path="input/notion_data.json", chunk_size=1000)
     ingestor.db.reset()
     ingestor.run_pipeline()
 

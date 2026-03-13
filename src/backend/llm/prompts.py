@@ -20,6 +20,19 @@ Confidence: <High/Medium/Low>
 """.strip()
 
 
+FILTER_SYSTEM_INSTRUCTION = """
+You are a relevance filter for a Retrieval-Augmented Generation (RAG) pipeline.
+Your job is to look at a user's question and a list of context chunks, and identify which chunks are TRULY relevant to answering the question.
+
+The workspace contains documents for many different projects (e.g. "TripStory AI", "AI-Powered Conversational Project Manager"). 
+If the user asks a generic question like "what is the midterm milestone?", you must ONLY select chunks that belong to the user's actual project, and EXCLUDE chunks that belong to unrelated project proposals, unless the user specifically named that other project.
+
+OUTPUT FORMAT:
+Return a comma-separated list of the chunk IDs that are relevant. If none are relevant, return "NONE".
+Example: chunk_1, chunk_4, chunk_9
+""".strip()
+
+
 def _format_chunks(chunks: List[Dict[str, Any]]) -> str:
     """
     Build a clean, deterministic context block with explicit chunk IDs + page titles + section + paragraph.
@@ -42,6 +55,22 @@ def _format_chunks(chunks: List[Dict[str, Any]]) -> str:
         lines.append(f"\n[CHUNK {i}] {meta_info}\n{text}")
 
     return "\n".join(lines).strip()
+
+
+def get_filter_prompt(chunks: List[Dict[str, Any]], question: str) -> str:
+    """
+    Prompt for the LLM re-ranking step.
+    """
+    context_block = _format_chunks(chunks)
+    return f"""
+    {context_block}
+
+    USER QUESTION:
+    {question}
+
+    Which of the chunks above are actually relevant to answering this precise question? Pay attention to the page titles to avoid confusing different projects.
+    Return ONLY a comma-separated list of the relevant chunk IDs (e.g. chunk_1, chunk_2).
+    """.strip()
 
 
 def get_rag_prompt(
