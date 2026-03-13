@@ -16,4 +16,7 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "sqlalchemy>=2.0.46",
     "uvicorn[standard]>=0.40.0",
+    "python-multipart>=0.0.22",
+    "pypdf2>=3.0.1",
+    "sse-starlette>=3.3.2",
 ]

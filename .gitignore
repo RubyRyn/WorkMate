@@ -35,8 +35,15 @@ dist/
 *.log
 
 # Data stores (explicit)
-chroma_db
 notion_data.json
 
 # SQLite database
 workmate.db
+
+# ChromaDB
+workmate_db/
+chroma_db/
+
+# Antigravity SKILLS
+.agent/
+CLAUDE.md

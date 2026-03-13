@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -10,8 +10,10 @@ class Settings(BaseSettings):
     JWT_EXPIRE_MINUTES: int = 1440  # 24 hours
     FRONTEND_URL: str = "http://localhost:5173"
     DATABASE_URL: str = "sqlite:///./workmate.db"
+    GEMINI_API_KEY: str = ""
+    NOTION_TOKEN: str = ""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = {"env_file": ".env", "extra": "ignore"}
 
 
 settings = Settings()

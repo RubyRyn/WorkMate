@@ -1,10 +1,10 @@
 import { Routes, Route } from "react-router-dom";
-import { Sidebar } from "./components/Sidebar";
-import { ChatWindow } from "./components/ChatWindow";
 import { LoginPage } from "./pages/LoginPage";
+import { ChatPage } from "./pages/ChatPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminRoute } from "./components/AdminRoute";
+import { Sidebar } from "./components/Sidebar";
 
 export default function App() {
   return (
@@ -15,8 +15,12 @@ export default function App() {
         element={
           <ProtectedRoute>
             <AdminRoute>
-              <div className="flex h-screen overflow-hidden bg-white">
-                <Sidebar />
+              <div className="flex h-screen overflow-hidden bg-white dark:bg-slate-900">
+                <Sidebar
+                  activeConversationId={null}
+                  onSelectConversation={() => {}}
+                  refreshKey={0}
+                />
                 <AdminPage />
               </div>
             </AdminRoute>
@@ -27,10 +31,7 @@ export default function App() {
         path="/*"
         element={
           <ProtectedRoute>
-            <div className="flex h-screen overflow-hidden bg-white">
-              <Sidebar />
-              <ChatWindow />
-            </div>
+            <ChatPage />
           </ProtectedRoute>
         }
       />

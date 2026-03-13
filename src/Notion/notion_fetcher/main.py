@@ -14,28 +14,31 @@ def main():
     """Example usage."""
     # Get token from environment variable
     token = os.environ.get("NOTION_TOKEN")
-    
+
     if not token:
         print("Error: NOTION_TOKEN environment variable not set")
         print("Usage: export NOTION_TOKEN='secret_your_token_here'")
         return
-    
+
     # Initialize fetcher
     fetcher = NotionFetcher(token)
-    
+
     # Fetch all content
     documents = fetcher.fetch_all()
-    
+
     # Print summary
     print("\n=== Summary ===")
     pages = [d for d in documents if d.source_type == "page"]
     rows = [d for d in documents if d.source_type == "database_row"]
     print(f"Pages: {len(pages)}")
     print(f"Database rows: {len(rows)}")
-    
+
     # Save to file
-    fetcher.save_to_json(documents, "notion_data.json")
-    
+    from pathlib import Path
+
+    data_dir = Path(__file__).resolve().parent.parent.parent / "data"
+    fetcher.save_to_json(documents, str(data_dir / "notion_data.json"))
+
     # Print first document as example
     if documents:
         print("\n=== Example Document ===")
