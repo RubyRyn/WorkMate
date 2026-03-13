@@ -1,29 +1,19 @@
 import json
-from pathlib import Path
-from langchain_text_splitters import (
-    MarkdownHeaderTextSplitter,
-    RecursiveCharacterTextSplitter,
-)
+from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from src.backend.load.chroma_manager import ChromaManager
 
-# Default path resolving to src/data/notion_data.json
-DEFAULT_DATA_PATH = str(
-    Path(__file__).resolve().parent.parent.parent / "data/notion_data.json"
-)
-
-
 class NotionIngestor:
-    def __init__(self, file_path=None, chunk_size=1000, chunk_overlap=200):
+    def __init__(self, file_path="./notion_data.json", chunk_size=500, chunk_overlap=100):
         """
         Initializes the ingestion pipeline, database connection, and splitters.
         """
-        self.file_path = file_path if file_path else DEFAULT_DATA_PATH
+        self.file_path = file_path
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
-
+        
         # Instantiate the database manager
         self.db = ChromaManager()
-
+        
         # Setup splitters on initialization
         self._setup_splitters()
 
@@ -43,12 +33,12 @@ class NotionIngestor:
             separators=["\n\n", "\n```\n", "\n---", "\n- ", "\n", " ", ""],
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,
-            length_function=len,
+            length_function=len
         )
 
     def _load_data(self):
         """Private method to load the raw JSON data."""
-        with open(self.file_path, "r", encoding="utf-8") as f:
+        with open(self.file_path, 'r', encoding='utf-8') as f:
             return json.load(f)
 
     def _build_parent_child_maps(self, raw_docs):
@@ -152,7 +142,6 @@ class NotionIngestor:
                 merged_splits.append(physical_splits[-1])
 
         physical_splits = merged_splits
-
         chunks = []
         metadatas = []
         ids = []
@@ -166,13 +155,13 @@ class NotionIngestor:
         # Format for ChromaDB
         for i, chunk in enumerate(physical_splits):
             chunks.append(chunk.page_content)
-
+            
             chunk_metadata = {
                 "parent_id": doc.get("id"),
                 "title": doc.get("title", "Untitled"),
                 "url": doc.get("url"),
                 "source_type": doc.get("source_type", "page"),
-                "chunk_index": i,
+                "chunk_index": i
             }
 
             # Add parent context to metadata for retrieval-time grouping
@@ -183,9 +172,9 @@ class NotionIngestor:
 
             # Merge the Markdown headers extracted by LangChain
             chunk_metadata.update(chunk.metadata)
-
+            
             metadatas.append(chunk_metadata)
-
+            
             # Deterministic ID creation
             ids.append(f"{doc['id']}_{i}")
 
@@ -195,12 +184,10 @@ class NotionIngestor:
         """Public method to execute the full ingestion pipeline."""
         print(f"📂 Loading data from {self.file_path}...")
         raw_docs = self._load_data()
-
         # Build parent-child relationship maps
         print("🔗 Building parent-child relationship maps...")
         id_to_doc, parent_to_children = self._build_parent_child_maps(raw_docs)
         print(f"   Found {len(parent_to_children)} parent documents with children")
-
         all_chunks = []
         all_metadatas = []
         all_ids = []
@@ -219,14 +206,13 @@ class NotionIngestor:
         else:
             print("⚠️ No chunks were created.")
 
-
 # --- Execution ---
 if __name__ == "__main__":
     # The instantiation is clean, and the parameters can easily be swapped for testing.
-    ingestor = NotionIngestor(file_path="input/notion_data.json", chunk_size=1000)
+    ingestor = NotionIngestor(file_path="../../data/notion_data.json")
     ingestor.db.reset()
     ingestor.run_pipeline()
 
     # The teammate changed this test query, using their query instead.
-    result = ingestor.db.query("What is the purpose of this document?", n_results=5)
+    result = ingestor.db.query("What is the purpose of this document?", n_results=10)
     print("Query Results:", result["documents"][:1])
