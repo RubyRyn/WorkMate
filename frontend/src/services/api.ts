@@ -55,7 +55,7 @@ export async function sendChatMessage(message: string): Promise<ChatMessage> {
 // --- Conversation endpoints ---
 
 export async function createConversation(): Promise<ConversationSummary> {
-  const res = await fetch(`${BASE_URL}/api/conversations/`, {
+  const res = await fetch(`${BASE_URL}/conversations/`, {
     method: 'POST',
     headers: authHeaders(),
   });
@@ -64,7 +64,7 @@ export async function createConversation(): Promise<ConversationSummary> {
 }
 
 export async function listConversations(): Promise<ConversationSummary[]> {
-  const res = await fetch(`${BASE_URL}/api/conversations/`, {
+  const res = await fetch(`${BASE_URL}/conversations/`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`Failed to list conversations (${res.status})`);
@@ -72,7 +72,7 @@ export async function listConversations(): Promise<ConversationSummary[]> {
 }
 
 export async function getConversation(id: number): Promise<ConversationDetail> {
-  const res = await fetch(`${BASE_URL}/api/conversations/${id}`, {
+  const res = await fetch(`${BASE_URL}/conversations/${id}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(`Failed to get conversation (${res.status})`);
@@ -83,7 +83,7 @@ export async function sendConversationMessage(
   conversationId: number,
   question: string,
 ): Promise<SendMessageResponse> {
-  const res = await fetch(`${BASE_URL}/api/conversations/${conversationId}/messages`, {
+  const res = await fetch(`${BASE_URL}/conversations/${conversationId}/messages`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ question }),
@@ -101,7 +101,7 @@ export async function sendConversationMessageStream(
   onChunk: (text: string) => void,
   onSources?: (sources: Source[]) => void,
 ): Promise<{ messageId?: number }> {
-  const res = await fetch(`${BASE_URL}/api/conversations/${conversationId}/messages/stream`, {
+  const res = await fetch(`${BASE_URL}/conversations/${conversationId}/messages/stream`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ question }),
@@ -149,7 +149,7 @@ export async function sendConversationMessageStream(
 }
 
 export async function deleteConversation(id: number): Promise<void> {
-  const res = await fetch(`${BASE_URL}/api/conversations/${id}`, {
+  const res = await fetch(`${BASE_URL}/conversations/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -157,7 +157,7 @@ export async function deleteConversation(id: number): Promise<void> {
 }
 
 export async function renameConversation(id: number, title: string): Promise<ConversationSummary> {
-  const res = await fetch(`${BASE_URL}/api/conversations/${id}`, {
+  const res = await fetch(`${BASE_URL}/conversations/${id}`, {
     method: 'PATCH',
     headers: authHeaders(),
     body: JSON.stringify({ title }),
@@ -179,7 +179,7 @@ export async function uploadFile(file: File): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch(`${BASE_URL}/api/upload/`, {
+  const res = await fetch(`${BASE_URL}/upload/`, {
     method: 'POST',
     headers: authHeadersRaw(),
     body: formData,
@@ -199,7 +199,7 @@ export async function uploadFiles(files: File[]): Promise<UploadResponse[]> {
     formData.append('files', file);
   }
 
-  const res = await fetch(`${BASE_URL}/api/upload/batch`, {
+  const res = await fetch(`${BASE_URL}/upload/batch`, {
     method: 'POST',
     headers: authHeadersRaw(),
     body: formData,

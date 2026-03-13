@@ -1,6 +1,6 @@
 import type { User } from "../types/auth";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 const TOKEN_KEY = "workmate_token";
 
 export function getToken(): string | null {
@@ -17,7 +17,7 @@ export function clearToken(): void {
 
 export async function fetchCurrentUser(): Promise<User> {
   const token = getToken();
-  const res = await fetch(`${BASE_URL}/api/auth/me`, {
+  const res = await fetch(`${BASE_URL}/auth/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Not authenticated");
@@ -25,7 +25,7 @@ export async function fetchCurrentUser(): Promise<User> {
 }
 
 export async function getGoogleAuthUrl(): Promise<string> {
-  const res = await fetch(`${BASE_URL}/api/auth/google`);
+  const res = await fetch(`${BASE_URL}/auth/google`);
   if (!res.ok) throw new Error("Failed to get auth URL");
   const data = await res.json();
   return data.authorization_url;
@@ -33,7 +33,7 @@ export async function getGoogleAuthUrl(): Promise<string> {
 
 export async function logout(): Promise<void> {
   const token = getToken();
-  await fetch(`${BASE_URL}/api/auth/logout`, {
+  await fetch(`${BASE_URL}/auth/logout`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });

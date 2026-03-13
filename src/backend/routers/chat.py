@@ -7,7 +7,7 @@ from src.backend.load.chroma_manager import ChromaManager
 from src.backend.llm.gemini_client import GeminiClient
 from src.backend.schemas.chat import ChatRequest, ChatResponse
 
-router = APIRouter(prefix="/chat", tags=["Chat"])
+router = APIRouter(prefix="/api/chat", tags=["Chat"])
 logger = logging.getLogger(__name__)
 
 
