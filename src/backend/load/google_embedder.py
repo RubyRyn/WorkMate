@@ -1,3 +1,8 @@
+"""
+Custom embedding function using Google's gemini-embedding-001 model.
+Implements ChromaDB's EmbeddingFunction protocol.
+"""
+
 import os
 import time
 
@@ -13,14 +18,15 @@ class GoogleEmbedder(EmbeddingFunction):
     """
     Custom embedding function using Google's gemini-embedding-001 model.
     Implements ChromaDB's EmbeddingFunction protocol.
+    Includes rate limit handling with automatic retries.
     """
 
     def __init__(self, model_name="gemini-embedding-001"):
         self.model_name = model_name
 
-        api_key = os.getenv("GEMINI_KEY")
+        api_key = os.getenv("GEMINI_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
-            print("⚠️ WARNING: GEMINI_KEY not found in environment.")
+            print("⚠️ WARNING: No Gemini API key found in environment (GEMINI_KEY / GEMINI_API_KEY).")
 
         self.client = genai.Client(api_key=api_key)
 
@@ -28,15 +34,12 @@ class GoogleEmbedder(EmbeddingFunction):
         return "google_embedder"
 
     def __call__(self, input: Documents) -> Embeddings:
-        """
-        Embeds a list of documents using the Google Generative AI API.
-        Retries on rate limit errors.
-        """
+        """Embed a list of documents with automatic rate limit handling."""
         if not input:
             return []
 
         embeddings = []
-        for doc in input:
+        for i, doc in enumerate(input):
             if not doc.strip():
                 continue
 
@@ -47,12 +50,18 @@ class GoogleEmbedder(EmbeddingFunction):
                         contents=doc,
                     )
                     embeddings.append(result.embeddings[0].values)
+
+                    # Small delay to stay under rate limit (100 req/min = 1 per 0.6s)
+                    if i < len(input) - 1:
+                        time.sleep(0.7)
                     break
+
                 except genai_errors.ClientError as e:
-                    if "429" in str(e) and attempt < 2:
-                        wait = 45 * (attempt + 1)
-                        print(f"⏳ Rate limited. Waiting {wait}s...")
-                        time.sleep(wait)
+                    error_str = str(e)
+                    if "429" in error_str and attempt < 2:
+                        wait_time = 45 * (attempt + 1)
+                        print(f"⏳ Rate limited on chunk {i+1}/{len(input)}, waiting {wait_time}s...")
+                        time.sleep(wait_time)
                     else:
                         raise e
 
