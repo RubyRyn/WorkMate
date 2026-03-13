@@ -42,6 +42,7 @@ workmate.db
 
 # ChromaDB
 workmate_db/
+chroma_db/
 
 # Antigravity SKILLS
 .agent/
