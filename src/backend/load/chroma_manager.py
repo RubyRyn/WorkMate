@@ -29,6 +29,7 @@ class ChromaManager:
 
         # Initialize Persistent Client
         self.client = chromadb.PersistentClient(path=db_path)
+        self.embedder = GoogleEmbedder()
 
         # Get or Create Collection
         try:
