@@ -58,7 +58,9 @@ async def get_conversation(
 ):
     conv = (
         db.query(Conversation)
-        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .filter(
+            Conversation.id == conversation_id, Conversation.user_id == current_user.id
+        )
         .first()
     )
     if not conv:
@@ -77,7 +79,9 @@ async def send_message(
 ):
     conv = (
         db.query(Conversation)
-        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .filter(
+            Conversation.id == conversation_id, Conversation.user_id == current_user.id
+        )
         .first()
     )
     if not conv:
@@ -91,8 +95,7 @@ async def send_message(
 
     # Build conversation history from last 6 messages
     conversation_history = [
-        {"role": m.role, "content": m.content}
-        for m in (conv.messages or [])[-6:]
+        {"role": m.role, "content": m.content} for m in (conv.messages or [])[-6:]
     ]
 
     # RAG pipeline
@@ -102,14 +105,24 @@ async def send_message(
         chunks = []
         if results and results.get("documents") and results["documents"][0]:
             docs = results["documents"][0]
-            metas = results["metadatas"][0] if results.get("metadatas") else [{}] * len(docs)
-            ids = results["ids"][0] if results.get("ids") else [str(i) for i in range(len(docs))]
+            metas = (
+                results["metadatas"][0]
+                if results.get("metadatas")
+                else [{}] * len(docs)
+            )
+            ids = (
+                results["ids"][0]
+                if results.get("ids")
+                else [str(i) for i in range(len(docs))]
+            )
             for doc, meta, doc_id in zip(docs, metas, ids):
-                chunks.append({
-                    "chunk_id": doc_id,
-                    "page_title": meta.get("title", "Unknown Source"),
-                    "text": doc,
-                })
+                chunks.append(
+                    {
+                        "chunk_id": doc_id,
+                        "page_title": meta.get("title", "Unknown Source"),
+                        "text": doc,
+                    }
+                )
 
         answer = gemini.ask_workmate(
             chunks=chunks,
@@ -119,7 +132,9 @@ async def send_message(
         )
     except Exception as e:
         logger.error(f"RAG pipeline error: {e}")
-        answer = "Sorry, I encountered an error processing your question. Please try again."
+        answer = (
+            "Sorry, I encountered an error processing your question. Please try again."
+        )
 
     # Save assistant message
     assistant_msg = MessageRecord(
@@ -129,7 +144,9 @@ async def send_message(
 
     # Auto-title on first message
     if conv.title == "New Chat":
-        conv.title = request.question[:50] + ("..." if len(request.question) > 50 else "")
+        conv.title = request.question[:50] + (
+            "..." if len(request.question) > 50 else ""
+        )
 
     conv.updated_at = datetime.now(timezone.utc)
     db.commit()
@@ -148,7 +165,9 @@ async def update_conversation(
 ):
     conv = (
         db.query(Conversation)
-        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .filter(
+            Conversation.id == conversation_id, Conversation.user_id == current_user.id
+        )
         .first()
     )
     if not conv:
@@ -171,7 +190,9 @@ async def stream_message(
 ):
     conv = (
         db.query(Conversation)
-        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .filter(
+            Conversation.id == conversation_id, Conversation.user_id == current_user.id
+        )
         .first()
     )
     if not conv:
@@ -191,14 +212,24 @@ async def stream_message(
         chunks = []
         if results and results.get("documents") and results["documents"][0]:
             docs = results["documents"][0]
-            metas = results["metadatas"][0] if results.get("metadatas") else [{}] * len(docs)
-            ids = results["ids"][0] if results.get("ids") else [str(i) for i in range(len(docs))]
+            metas = (
+                results["metadatas"][0]
+                if results.get("metadatas")
+                else [{}] * len(docs)
+            )
+            ids = (
+                results["ids"][0]
+                if results.get("ids")
+                else [str(i) for i in range(len(docs))]
+            )
             for doc, meta, doc_id in zip(docs, metas, ids):
-                chunks.append({
-                    "chunk_id": doc_id,
-                    "page_title": meta.get("title", "Unknown Source"),
-                    "text": doc,
-                })
+                chunks.append(
+                    {
+                        "chunk_id": doc_id,
+                        "page_title": meta.get("title", "Unknown Source"),
+                        "text": doc,
+                    }
+                )
     except Exception as e:
         logger.error(f"RAG retrieval error: {e}")
         chunks = []
@@ -234,7 +265,9 @@ async def stream_message(
 
         # Auto-title if still "New Chat"
         if conv.title == "New Chat":
-            conv.title = request.question[:50] + ("..." if len(request.question) > 50 else "")
+            conv.title = request.question[:50] + (
+                "..." if len(request.question) > 50 else ""
+            )
 
         conv.updated_at = datetime.now(timezone.utc)
         db.commit()
@@ -250,7 +283,11 @@ async def stream_message(
                 }
                 for c in chunks
             ]
-        yield {"data": json.dumps({"done": True, "message_id": assistant_msg.id, "sources": sources})}
+        yield {
+            "data": json.dumps(
+                {"done": True, "message_id": assistant_msg.id, "sources": sources}
+            )
+        }
 
     return EventSourceResponse(event_generator())
 
@@ -263,7 +300,9 @@ async def delete_conversation(
 ):
     conv = (
         db.query(Conversation)
-        .filter(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+        .filter(
+            Conversation.id == conversation_id, Conversation.user_id == current_user.id
+        )
         .first()
     )
     if not conv:
