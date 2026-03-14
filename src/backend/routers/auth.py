@@ -10,7 +10,7 @@ from src.backend.database import get_db
 from src.backend.dependencies.auth import create_access_token, get_current_user
 from src.backend.models.user import Role, User
 from src.backend.schemas.auth import GoogleAuthURL
-from src.backend.schemas.user import UserResponse
+from src.backend.schemas.user import UpdateProfileRequest, UserResponse
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -109,6 +109,27 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    body: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    current_user.name = body.name
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db.delete(current_user)
+    db.commit()
 
 
 @router.post("/logout")
