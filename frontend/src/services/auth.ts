@@ -31,6 +31,30 @@ export async function getGoogleAuthUrl(): Promise<string> {
   return data.authorization_url;
 }
 
+export async function updateProfile(data: { name: string }): Promise<User> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}/auth/me`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to update profile");
+  return res.json();
+}
+
+export async function deleteAccount(): Promise<void> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}/auth/me`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to delete account");
+  clearToken();
+}
+
 export async function logout(): Promise<void> {
   const token = getToken();
   await fetch(`${BASE_URL}/auth/logout`, {
