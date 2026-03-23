@@ -33,14 +33,25 @@ class GeminiClient:
     ) -> List[Dict[str, Any]]:
         """
         LLM Re-ranking: Asks Gemini to filter out irrelevant chunks before generation.
+        Uses sequential chunk_N IDs (chunk_1, chunk_2, ...) for the filter prompt so
+        the LLM and the matching logic agree on the same ID format.
         """
         if not chunks:
             return []
 
-        prompt = prompts.get_filter_prompt(chunks, user_question)
+        # Remap chunks to sequential IDs for the filter prompt so the LLM
+        # returns predictable IDs like "chunk_1, chunk_3" instead of UUIDs.
+        sequential_id_map: Dict[str, Dict[str, Any]] = {}
+        remapped_chunks = []
+        for i, chunk in enumerate(chunks, start=1):
+            seq_id = f"chunk_{i}"
+            sequential_id_map[seq_id] = chunk
+            remapped_chunks.append({**chunk, "chunk_id": seq_id})
+
+        prompt = prompts.get_filter_prompt(remapped_chunks, user_question)
         cfg = types.GenerateContentConfig(
             system_instruction=prompts.FILTER_SYSTEM_INSTRUCTION,
-            temperature=0.0,  # Zero precision for extraction
+            temperature=0.0,
             max_output_tokens=100,
         )
 
@@ -51,40 +62,37 @@ class GeminiClient:
                 config=cfg,
             )
             output = getattr(response, "text", "") or ""
-            print(f"🧠 Re-ranker Output: {output}")
-            
+            print(f"Re-ranker Output: {output}")
+
             if "NONE" in output.upper():
-                print("🧠 Re-ranker kept 0 chunks.")
+                print("Re-ranker kept 0 chunks.")
                 return []
-                
-            # Parse the output safely: sometimes Gemini returns a clean comma-separated list of UUIDs
-            # But sometimes it's lazy and returns just the first part e.g. "30, 4f" instead of "302f24..."
-            filtered_chunks = []
+
+            # Match returned IDs (e.g. "chunk_1, chunk_3") back to original chunks.
             output_parts = [p.strip() for p in output.split(",") if p.strip()]
-            
-            for chunk in chunks:
-                chunk_id = str(chunk["chunk_id"])
-                
-                # Check 1: Is the full chunk_id anywhere in the raw output string?
-                if chunk_id in output:
-                    filtered_chunks.append(chunk)
+            filtered_chunks = []
+            seen = set()
+            for part in output_parts:
+                # Exact match: "chunk_3"
+                if part in sequential_id_map and part not in seen:
+                    filtered_chunks.append(sequential_id_map[part])
+                    seen.add(part)
                     continue
-                    
-                # Check 2: Did the LLM abbreviate the IDs? Check each comma-separated part.
-                for part in output_parts:
-                    if len(part) >= 2 and chunk_id.startswith(part):
-                        filtered_chunks.append(chunk)
-                        break
-            
-            print(f"🧠 Re-ranker kept {len(filtered_chunks)}/{len(chunks)} chunks.")
-            
-            # Fallback to all chunks if zero were matched but it didn't explicitly say "NONE"
+                # Plain number match: LLM returned "3" instead of "chunk_3"
+                candidate = f"chunk_{part}"
+                if candidate in sequential_id_map and candidate not in seen:
+                    filtered_chunks.append(sequential_id_map[candidate])
+                    seen.add(candidate)
+
+            print(f"Re-ranker kept {len(filtered_chunks)}/{len(chunks)} chunks.")
+
+            # Fallback: if nothing matched but LLM didn't say NONE, return all chunks.
             if not filtered_chunks:
-                 return chunks
+                return chunks
             return filtered_chunks
-            
+
         except Exception as e:
-            logger.warning(f"⚠️ Re-ranking failed (falling back to all chunks): {e}")
+            logger.warning(f"Re-ranking failed (falling back to all chunks): {e}")
             return chunks
 
     def ask_workmate(
