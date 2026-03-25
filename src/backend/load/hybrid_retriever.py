@@ -17,15 +17,16 @@ class HybridRetriever:
         vector_top_k: int = 15,
         bm25_top_k: int = 15,
         final_top_k: int = 15,
+        where: dict | None = None,
     ) -> list[dict]:
-        vector_results = self._query_chroma(query, vector_top_k)
+        vector_results = self._query_chroma(query, vector_top_k, where=where)
         bm25_results = self.bm25.search(query, top_k=bm25_top_k)
 
         merged = self.reciprocal_rank_fusion([vector_results, bm25_results])
         return merged[:final_top_k]
 
-    def _query_chroma(self, query: str, top_k: int) -> list[dict]:
-        results = self.chroma.query(query, n_results=top_k)
+    def _query_chroma(self, query: str, top_k: int, where: dict | None = None) -> list[dict]:
+        results = self.chroma.query(query, n_results=top_k, where=where)
         output = []
         if results and results.get("documents") and results["documents"][0]:
             docs = results["documents"][0]

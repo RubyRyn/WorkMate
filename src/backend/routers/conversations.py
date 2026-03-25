@@ -9,11 +9,11 @@ from sse_starlette.sse import EventSourceResponse
 from src.backend.database import get_db
 from src.backend.dependencies.auth import get_current_user
 from src.backend.dependencies.services import get_gemini_client, get_hybrid_retriever, get_voyage_reranker
+from src.backend.dependencies.workspace import get_workspace_filter
 from src.backend.load.hybrid_retriever import HybridRetriever
 from src.backend.llm.gemini_client import GeminiClient
 from src.backend.llm.voyage_reranker import VoyageReranker
 from src.backend.models.conversation import Conversation, MessageRecord
-MAX_CONTEXT_CHARS = 5000
 from src.backend.models.user import User
 from src.backend.schemas.conversation import (
     ConversationDetail,
@@ -25,6 +25,8 @@ from src.backend.schemas.conversation import (
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 logger = logging.getLogger(__name__)
+
+MAX_CONTEXT_CHARS = 5000
 
 
 @router.post("/", response_model=ConversationSummary)
@@ -104,7 +106,11 @@ async def send_message(
     # RAG pipeline
     try:
         # Step 1: Hybrid Retrieval (vector + BM25, merged via RRF)
-        all_chunks = hybrid.search(request.question, vector_top_k=15, bm25_top_k=15, final_top_k=15)
+        where_filter = get_workspace_filter(current_user.id, db)
+        all_chunks = hybrid.search(
+            request.question, vector_top_k=15, bm25_top_k=15, final_top_k=15,
+            where=where_filter,
+        )
 
         # Step 2: Sibling Expansion
         seen_ids = {chunk["chunk_id"] for chunk in all_chunks}
@@ -258,7 +264,11 @@ async def stream_message(
     # RAG retrieval
     try:
         # Step 1: Hybrid Retrieval (vector + BM25, merged via RRF)
-        all_chunks = hybrid.search(request.question, vector_top_k=15, bm25_top_k=15, final_top_k=15)
+        where_filter = get_workspace_filter(current_user.id, db)
+        all_chunks = hybrid.search(
+            request.question, vector_top_k=15, bm25_top_k=15, final_top_k=15,
+            where=where_filter,
+        )
 
         # Step 2: Sibling Expansion
         seen_ids = {chunk["chunk_id"] for chunk in all_chunks}

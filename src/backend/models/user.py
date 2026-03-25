@@ -30,3 +30,6 @@ class User(Base):
     conversations: Mapped[list["Conversation"]] = relationship(  # noqa: F821
         "Conversation", back_populates="user"
     )
+    notion_connections: Mapped[list["NotionConnection"]] = relationship(  # noqa: F821
+        "NotionConnection", back_populates="user", cascade="all, delete-orphan"
+    )

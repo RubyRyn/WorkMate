@@ -213,14 +213,38 @@ export async function uploadFiles(files: File[]): Promise<UploadResponse[]> {
   return res.json();
 }
 
-/**
- * Fetch connected Notion workspaces.
- * Currently returns mock data.
- */
+// --- Notion workspace endpoints ---
+
+export async function getNotionAuthUrl(): Promise<string> {
+  const res = await fetch(`${BASE_URL}/notion/connect`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to get Notion auth URL');
+  const data = await res.json();
+  return data.authorization_url;
+}
+
 export async function getWorkspaces(): Promise<NotionWorkspace[]> {
-  return [
-    { id: '1', name: 'Product Requirements', pageCount: 24, connected: true },
-    { id: '2', name: 'Engineering Docs', pageCount: 156, connected: true },
-    { id: '3', name: 'Team Wiki', pageCount: 89, connected: true },
-  ];
+  const res = await fetch(`${BASE_URL}/notion/workspaces`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to fetch workspaces');
+  return res.json();
+}
+
+export async function disconnectWorkspace(workspaceId: number): Promise<void> {
+  const res = await fetch(`${BASE_URL}/notion/workspaces/${workspaceId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to disconnect workspace');
+}
+
+export async function syncWorkspace(workspaceId: number): Promise<{ status: string }> {
+  const res = await fetch(`${BASE_URL}/notion/workspaces/${workspaceId}/sync`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to sync workspace');
+  return res.json();
 }

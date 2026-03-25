@@ -20,10 +20,13 @@ export interface ChatMessage {
 }
 
 export interface NotionWorkspace {
-  id: string;
-  name: string;
-  pageCount: number;
-  connected: boolean;
+  id: number;
+  workspace_id: string;
+  workspace_name: string;
+  workspace_icon: string | null;
+  sync_status: string;
+  last_synced_at: string | null;
+  connected_at: string;
 }
 
 export interface RecentProject {
