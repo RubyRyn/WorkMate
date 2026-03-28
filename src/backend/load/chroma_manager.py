@@ -100,7 +100,7 @@ class ChromaManager:
         """Delete all chunks belonging to a specific workspace."""
         try:
             self.collection.delete(where={"workspace_id": workspace_id})
-            print(f"🗑️ Deleted all chunks for workspace '{workspace_id}'")
+            print(f"Deleted all chunks for workspace '{workspace_id}'")
         except Exception as e:
             logger.error(f"Error deleting chunks for workspace {workspace_id}: {e}")
             raise

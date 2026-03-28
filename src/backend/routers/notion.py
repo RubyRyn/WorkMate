@@ -29,9 +29,9 @@ def _ingest_workspace(workspace_db_id: int, access_token: str, notion_workspace_
     import os
     import sys
 
-    # Add src/Notion to sys.path so notion_fetcher's internal imports resolve
-    notion_dir = os.path.join(os.path.dirname(__file__), "../../Notion")
-    notion_dir = os.path.abspath(notion_dir)
+    # notion_fetcher uses bare imports (e.g. "from notion_fetcher.client import ...")
+    # that resolve relative to src/Notion/, so it must be on sys.path.
+    notion_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../Notion"))
     if notion_dir not in sys.path:
         sys.path.insert(0, notion_dir)
 

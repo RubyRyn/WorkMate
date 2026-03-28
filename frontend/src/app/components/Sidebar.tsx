@@ -277,8 +277,8 @@ export function Sidebar({
               </Link>
             ) : (
               workspaces.map((workspace) => (
+                <Link key={workspace.id} to="/settings">
                 <Card
-                  key={workspace.id}
                   className="p-2.5 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer border-slate-200 dark:border-slate-700"
                 >
                   <div className="flex items-start justify-between">
@@ -300,6 +300,7 @@ export function Sidebar({
                     <ChevronRight className="w-4 h-4 text-slate-400" />
                   </div>
                 </Card>
+                </Link>
               ))
             )}
           </div>

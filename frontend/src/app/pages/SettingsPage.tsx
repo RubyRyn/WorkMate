@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Sun, Moon, Monitor, Link2, RefreshCw, Unplug, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -47,14 +47,15 @@ export function SettingsPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Poll for status updates while any workspace is syncing
-  useEffect(() => {
-    const isSyncing = workspaces.some((w) => w.sync_status === 'syncing');
-    if (!isSyncing) return;
+  const isSyncingRef = useRef(false);
+  isSyncingRef.current = workspaces.some((w) => w.sync_status === 'syncing');
 
-    const interval = setInterval(() => {
+  useEffect(() => {
+    if (!isSyncingRef.current) return;
+
+    const poll = () => {
       getWorkspaces().then((ws) => {
         setWorkspaces(ws);
-        // Stop polling if nothing is syncing anymore
         if (!ws.some((w) => w.sync_status === 'syncing')) {
           const failed = ws.find((w) => w.sync_status === 'error');
           if (failed) {
@@ -64,10 +65,17 @@ export function SettingsPage() {
           }
         }
       }).catch(() => {});
-    }, 10000);
+    };
 
-    return () => clearInterval(interval);
-  }, [workspaces]);
+    // Poll immediately, then every 5 seconds
+    const timeout = setTimeout(poll, 2000);
+    const interval = setInterval(poll, 5000);
+
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [isSyncingRef.current]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadWorkspaces = async () => {
     try {
