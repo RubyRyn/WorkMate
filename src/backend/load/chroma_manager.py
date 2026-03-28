@@ -39,7 +39,7 @@ class ChromaManager:
             name=collection_name
         )
         print(
-            f"✅ Connected to ChromaDB at '{db_path}' (Collection: '{collection_name}') with Google Embedder"
+            f"Connected to ChromaDB at '{db_path}' (Collection: '{collection_name}') with Google Embedder"
         )
 
     def add_documents(self, documents, metadatas, ids, batch_size=20):
@@ -61,9 +61,9 @@ class ChromaManager:
                     ids=batch_ids,
                     embeddings=embeddings,
                 )
-                print(f"✅ Added batch {i // batch_size + 1} ({len(batch_docs)} docs, {i + len(batch_docs)}/{total})")
+                print(f"Added batch {i // batch_size + 1} ({len(batch_docs)} docs, {i + len(batch_docs)}/{total})")
             except Exception as e:
-                print(f"❌ Error adding batch {i // batch_size + 1}: {e}")
+                print(f"Error adding batch {i // batch_size + 1}: {e}")
                 raise e
 
     def query(self, query_text, n_results=5, where=None):
@@ -71,7 +71,7 @@ class ChromaManager:
         Search the collection for relevant documents.
         Embeds the query using Google Embedder before searching.
         """
-        print(f"🔍 Querying: '{query_text}'...")
+        print(f"Querying: '{query_text}'...")
 
         # Embed the query with the same Google model used during ingestion
         query_embedding = self.embedder([query_text])
@@ -105,4 +105,4 @@ class ChromaManager:
         self.collection = self.client.get_or_create_collection(
             self.collection_name
         )
-        print(f"⚠️ Collection '{self.collection_name}' has been reset.")
+        print(f"Collection '{self.collection_name}' has been reset.")
