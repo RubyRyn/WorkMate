@@ -21,13 +21,17 @@ class VoyageReranker:
         model: str = DEFAULT_RERANK_MODEL,
         threshold: float = RELEVANCE_THRESHOLD,
     ):
-        import voyageai
-
         api_key = os.getenv("VOYAGE_API_KEY")
         if not api_key:
-            raise ValueError("VOYAGE_API_KEY environment variable not set.")
+            logger.warning(
+                "[VoyageReranker] VOYAGE_API_KEY not set — reranking disabled. "
+                "Set VOYAGE_API_KEY in .env to enable VoyageAI reranking."
+            )
+            self.client = None
+        else:
+            import voyageai
+            self.client = voyageai.Client(api_key=api_key)
 
-        self.client = voyageai.Client(api_key=api_key)
         self.model = model
         self.threshold = threshold
 
@@ -46,6 +50,10 @@ class VoyageReranker:
         """
         if not chunks:
             return [], []
+
+        if self.client is None:
+            logger.warning("[VoyageReranker] Reranking skipped (no API key). Returning top_k unranked.")
+            return chunks[:top_k], []
 
         documents = [
             f"Page: {c['page_title']}\nSection: {c['section']}\n{c['text']}"

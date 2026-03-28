@@ -47,3 +47,9 @@ chroma_db/
 # Antigravity SKILLS
 .agent/
 CLAUDE.md
+.claude/
+
+# Debugging
+Tasks_for_Claude.txt
+debug_rag.py
+generate_token.py

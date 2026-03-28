@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     DATABASE_URL: str = "sqlite:///./workmate.db"
     GEMINI_API_KEY: str = ""
+    VOYAGE_API_KEY: str = ""
     NOTION_TOKEN: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}

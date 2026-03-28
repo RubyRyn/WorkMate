@@ -96,6 +96,11 @@ async def send_message(
     )
     db.add(user_msg)
 
+    # Build conversation history from last 6 messages (user_msg not yet committed)
+    conversation_history = [
+        {"role": m.role, "content": m.content} for m in (conv.messages or [])[-6:]
+    ]
+
     # RAG pipeline
     try:
         # Step 1: Hybrid Retrieval (vector + BM25, merged via RRF)
@@ -155,6 +160,7 @@ async def send_message(
             chunks=final_chunks,
             user_question=request.question,
             debug=request.debug,
+            conversation_history=conversation_history,
         )
 
     except Exception as e:
@@ -298,6 +304,12 @@ async def stream_message(
         logger.error(f"RAG retrieval error: {e}")
         final_chunks = []
 
+    # Load conversation history (last 6 messages before the new user message)
+    conversation_history = [
+        {"role": m.role, "content": m.content}
+        for m in (conv.messages or [])[-7:-1]  # exclude the just-committed user msg
+    ]
+
     async def event_generator():
         full_answer = ""
         try:
@@ -305,6 +317,7 @@ async def stream_message(
                 chunks=final_chunks,
                 user_question=request.question,
                 debug=request.debug,
+                conversation_history=conversation_history,
             ):
                 full_answer += text_chunk
                 yield {"data": json.dumps({"chunk": text_chunk})}
