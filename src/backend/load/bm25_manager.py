@@ -32,18 +32,21 @@ class BM25Manager:
         self.index.index(tokenized_corpus)
         logger.info(f"BM25 index built with {len(chunks)} documents")
 
-    def search(self, query: str, top_k: int = 10) -> list[dict]:
+    def search(self, query: str, top_k: int = 10, where: dict | None = None) -> list[dict]:
         if self.index is None:
             logger.warning("BM25 index not built, returning empty results")
             return []
 
-        k = min(top_k, len(self.chunks))
+        # Over-fetch when filtering to compensate for filtered-out results
+        fetch_k = min(top_k * 3 if where else top_k, len(self.chunks))
         query_tokens = bm25s.tokenize([query.lower()])
-        results, _ = self.index.retrieve(query_tokens, k=k)
+        results, _ = self.index.retrieve(query_tokens, k=fetch_k)
 
         output = []
         for idx in results[0]:
             meta = self.metadatas[idx]
+            if where and not self._matches_filter(meta, where):
+                continue
             output.append({
                 "chunk_id": self.ids[idx],
                 "text": self.chunks[idx],
@@ -51,7 +54,21 @@ class BM25Manager:
                 "section": meta.get("parent_title", ""),
                 **meta,
             })
+            if len(output) >= top_k:
+                break
         return output
+
+    @staticmethod
+    def _matches_filter(meta: dict, where: dict) -> bool:
+        """Check if metadata matches a ChromaDB-style where filter."""
+        for key, condition in where.items():
+            if isinstance(condition, dict):
+                if "$in" in condition:
+                    if meta.get(key) not in condition["$in"]:
+                        return False
+            elif meta.get(key) != condition:
+                return False
+        return True
 
     def save(self, path: str = BM25_INDEX_PATH):
         os.makedirs(os.path.dirname(path), exist_ok=True)

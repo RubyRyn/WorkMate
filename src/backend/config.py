@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     VOYAGE_API_KEY: str = ""
     NOTION_TOKEN: str = ""
+    NOTION_OAUTH_CLIENT_ID: str = ""
+    NOTION_OAUTH_CLIENT_SECRET: str = ""
+    NOTION_REDIRECT_URI: str = "http://localhost:8000/api/notion/callback"
+    NOTION_ENCRYPTION_KEY: str = ""
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

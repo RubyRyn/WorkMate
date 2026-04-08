@@ -55,7 +55,7 @@ class ChromaManager:
             try:
                 # Generate embeddings with Google Embedder
                 embeddings = self.embedder(batch_docs)
-                self.collection.add(
+                self.collection.upsert(
                     documents=batch_docs,
                     metadatas=batch_meta,
                     ids=batch_ids,
@@ -95,6 +95,15 @@ class ChromaManager:
             include=["documents", "metadatas"],
         )
         return results
+
+    def delete_by_workspace(self, workspace_id: str):
+        """Delete all chunks belonging to a specific workspace."""
+        try:
+            self.collection.delete(where={"workspace_id": workspace_id})
+            print(f"Deleted all chunks for workspace '{workspace_id}'")
+        except Exception as e:
+            logger.error(f"Error deleting chunks for workspace {workspace_id}: {e}")
+            raise
 
     def reset(self):
         """

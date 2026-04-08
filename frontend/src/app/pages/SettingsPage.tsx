@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sun, Moon, Monitor, Link2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Sun, Moon, Monitor, Link2, RefreshCw, Unplug, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
@@ -20,14 +20,125 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from 'next-themes';
 import { updateProfile, deleteAccount } from '../../services/auth';
+import { getNotionAuthUrl, getWorkspaces, disconnectWorkspace, syncWorkspace } from '../../services/api';
+import type { NotionWorkspace } from '../../types/chat';
 
 export function SettingsPage() {
   const { user, logout, updateUser } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [name, setName] = useState(user?.name ?? '');
   const [saving, setSaving] = useState(false);
+  const [workspaces, setWorkspaces] = useState<NotionWorkspace[]>([]);
+  const [loadingWorkspaces, setLoadingWorkspaces] = useState(true);
+  const [connecting, setConnecting] = useState(false);
+  const [syncingId, setSyncingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadWorkspaces();
+    // Handle redirect from Notion OAuth callback
+    if (searchParams.get('notion') === 'connected') {
+      toast.success('Notion workspace connected! Ingestion is running in the background.');
+      searchParams.delete('notion');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll for status updates while any workspace is syncing
+  const isSyncingRef = useRef(false);
+  isSyncingRef.current = workspaces.some((w) => w.sync_status === 'syncing');
+
+  useEffect(() => {
+    if (!isSyncingRef.current) return;
+
+    const poll = () => {
+      getWorkspaces().then((ws) => {
+        setWorkspaces(ws);
+        if (!ws.some((w) => w.sync_status === 'syncing')) {
+          const failed = ws.find((w) => w.sync_status === 'error');
+          if (failed) {
+            toast.error(`Sync failed for ${failed.workspace_name}`);
+          } else {
+            toast.success('Sync complete!');
+          }
+        }
+      }).catch(() => {});
+    };
+
+    // Poll immediately, then every 5 seconds
+    const timeout = setTimeout(poll, 2000);
+    const interval = setInterval(poll, 5000);
+
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
+  }, [isSyncingRef.current]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadWorkspaces = async () => {
+    try {
+      const ws = await getWorkspaces();
+      setWorkspaces(ws);
+    } catch {
+      // Silently fail — user may not have any workspaces
+    } finally {
+      setLoadingWorkspaces(false);
+    }
+  };
+
+  const handleConnectNotion = async () => {
+    setConnecting(true);
+    try {
+      const url = await getNotionAuthUrl();
+      window.location.href = url;
+    } catch {
+      toast.error('Failed to initiate Notion connection');
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async (wsId: number) => {
+    try {
+      await disconnectWorkspace(wsId);
+      setWorkspaces((prev) => prev.filter((w) => w.id !== wsId));
+      toast.success('Workspace disconnected');
+    } catch {
+      toast.error('Failed to disconnect workspace');
+    }
+  };
+
+  const handleSync = async (wsId: number) => {
+    setSyncingId(wsId);
+    try {
+      const result = await syncWorkspace(wsId);
+      if (result.status === 'already_syncing') {
+        toast.info('Sync is already in progress');
+      } else {
+        toast.success('Sync started — this may take a few minutes');
+        setWorkspaces((prev) =>
+          prev.map((w) => (w.id === wsId ? { ...w, sync_status: 'syncing' } : w))
+        );
+      }
+    } catch {
+      toast.error('Failed to start sync');
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const formatTimeAgo = (dateStr: string | null) => {
+    if (!dateStr) return 'Never';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
 
   const handleSaveName = async () => {
     const trimmed = name.trim();
@@ -147,17 +258,95 @@ export function SettingsPage() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">
             Connected Accounts
           </h2>
-          <div className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-600 p-3">
-            <div className="flex items-center gap-3">
-              <Link2 className="h-5 w-5 text-slate-500 dark:text-slate-400" />
-              <div>
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Notion</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Coming soon</p>
+          <div className="space-y-3">
+            {loadingWorkspaces ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
               </div>
-            </div>
-            <Button variant="outline" disabled className="dark:border-slate-600 dark:text-slate-400">
-              Connect
-            </Button>
+            ) : (
+              <>
+                {workspaces.map((ws) => (
+                  <div
+                    key={ws.id}
+                    className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-600 p-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Link2 className="h-5 w-5 text-purple-500" />
+                      <div>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {ws.workspace_name}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Connected {formatTimeAgo(ws.connected_at)}
+                          {ws.last_synced_at && ` · Last synced ${formatTimeAgo(ws.last_synced_at)}`}
+                          {ws.sync_status === 'syncing' && (
+                            <span className="ml-1 text-purple-500">· Syncing...</span>
+                          )}
+                          {ws.sync_status === 'error' && (
+                            <span className="ml-1 text-red-500">· Sync failed</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSync(ws.id)}
+                        disabled={syncingId === ws.id || ws.sync_status === 'syncing'}
+                        className="dark:border-slate-600 dark:text-slate-300"
+                      >
+                        <RefreshCw className={`h-3.5 w-3.5 mr-1 ${syncingId === ws.id || ws.sync_status === 'syncing' ? 'animate-spin' : ''}`} />
+                        Sync
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 hover:text-red-600 dark:border-slate-600"
+                          >
+                            <Unplug className="h-3.5 w-3.5 mr-1" />
+                            Disconnect
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Disconnect {ws.workspace_name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will remove your connection to this Notion workspace.
+                              If no other users are connected, the workspace data will also be removed.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDisconnect(ws.id)}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              Disconnect
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  onClick={handleConnectNotion}
+                  disabled={connecting}
+                  className="w-full dark:border-slate-600 dark:text-slate-300"
+                >
+                  {connecting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  {workspaces.length > 0 ? 'Connect another Notion workspace' : 'Connect Notion workspace'}
+                </Button>
+              </>
+            )}
           </div>
         </Card>
 

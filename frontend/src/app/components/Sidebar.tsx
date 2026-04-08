@@ -18,15 +18,9 @@ import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
-import { listConversations, deleteConversation, renameConversation } from '../../services/api';
+import { listConversations, deleteConversation, renameConversation, getWorkspaces } from '../../services/api';
 import { toast } from 'sonner';
 import type { ConversationSummary, NotionWorkspace } from '../../types/chat';
-
-const mockWorkspaces: NotionWorkspace[] = [
-  { id: '1', name: 'Product Requirements', pageCount: 24, connected: true },
-  { id: '2', name: 'Engineering Docs', pageCount: 156, connected: true },
-  { id: '3', name: 'Team Wiki', pageCount: 89, connected: true },
-];
 
 interface SidebarProps {
   activeConversationId: number | null;
@@ -63,11 +57,15 @@ export function Sidebar({
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [workspaces, setWorkspaces] = useState<NotionWorkspace[]>([]);
 
   useEffect(() => {
     listConversations()
       .then(setConversations)
       .catch((err) => console.error('Failed to load conversations:', err));
+    getWorkspaces()
+      .then(setWorkspaces)
+      .catch(() => {}); // Silently fail if no workspaces
   }, [refreshKey]);
 
   const handleDelete = async (e: React.MouseEvent, id: number) => {
@@ -270,25 +268,41 @@ export function Sidebar({
             <h2 className="font-semibold text-slate-900 dark:text-slate-100">Connected Workspaces</h2>
           </div>
           <div className="space-y-1.5">
-            {mockWorkspaces.map((workspace) => (
-              <Card
-                key={workspace.id}
-                className="p-2.5 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer border-slate-200 dark:border-slate-700"
+            {workspaces.length === 0 ? (
+              <Link
+                to="/settings"
+                className="block text-xs text-slate-400 hover:text-purple-500 text-center py-3 transition-colors"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <h3 className="font-medium text-sm text-slate-900 dark:text-slate-100">{workspace.name}</h3>
+                Connect a Notion workspace
+              </Link>
+            ) : (
+              workspaces.map((workspace) => (
+                <Link key={workspace.id} to="/settings">
+                <Card
+                  className="p-2.5 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer border-slate-200 dark:border-slate-700"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          workspace.sync_status === 'syncing' ? 'bg-yellow-500 animate-pulse' :
+                          workspace.sync_status === 'error' ? 'bg-red-500' : 'bg-green-500'
+                        }`} />
+                        <h3 className="font-medium text-sm text-slate-900 dark:text-slate-100">
+                          {workspace.workspace_name}
+                        </h3>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        {workspace.sync_status === 'syncing' ? 'Syncing...' :
+                         workspace.last_synced_at ? `Synced ${formatTime(workspace.last_synced_at)}` : 'Pending sync'}
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      {workspace.pageCount} pages indexed
-                    </p>
+                    <ChevronRight className="w-4 h-4 text-slate-400" />
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </div>
-              </Card>
-            ))}
+                </Card>
+                </Link>
+              ))
+            )}
           </div>
         </div>
 
