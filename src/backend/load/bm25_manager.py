@@ -51,7 +51,7 @@ class BM25Manager:
                 "chunk_id": self.ids[idx],
                 "text": self.chunks[idx],
                 "page_title": meta.get("title", "Unknown Source"),
-                "section": meta.get("parent_title", ""),
+                "section": meta.get("section_header") or meta.get("parent_title", ""),
                 **meta,
             })
             if len(output) >= top_k:
