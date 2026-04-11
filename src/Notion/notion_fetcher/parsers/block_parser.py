@@ -15,13 +15,23 @@ class BlockParser:
     RICH_TEXT_BLOCKS = {
         "paragraph",
         "heading_1",
-        "heading_2", 
+        "heading_2",
         "heading_3",
         "bulleted_list_item",
         "numbered_list_item",
         "quote",
         "callout",
         "toggle",
+    }
+
+    # Structural blocks that intentionally produce no text.
+    # Their children (if any) are fetched recursively by page_fetcher.
+    STRUCTURAL_BLOCKS = {
+        "column_list",
+        "column",
+        "synced_block",
+        "table_of_contents",
+        "breadcrumb",
     }
     
     def __init__(self):
@@ -40,6 +50,15 @@ class BlockParser:
             "table_row": self._parse_table_row,
             "child_page": self._parse_child_page,
             "child_database": self._parse_child_database,
+            "divider": self._parse_divider,
+            "equation": self._parse_equation,
+            "bookmark": self._parse_bookmark,
+            "image": self._parse_media,
+            "video": self._parse_media,
+            "file": self._parse_media,
+            "pdf": self._parse_media,
+            "embed": self._parse_embed,
+            "link_preview": self._parse_link_preview,
         }
     
     def parse_block(self, block: dict) -> Optional[str]:
@@ -61,11 +80,15 @@ class BlockParser:
         
         if parser:
             return parser(block)
-        
+
+        # Structural blocks intentionally produce no text
+        if block_type in self.STRUCTURAL_BLOCKS:
+            return None
+
         # For unsupported block types, try generic rich_text extraction
         if block_type in self.RICH_TEXT_BLOCKS:
             return self._parse_rich_text_block(block)
-        
+
         return None
     
     def parse_blocks(self, blocks: List[dict]) -> str:
@@ -184,5 +207,73 @@ class BlockParser:
         """Parse child database reference."""
         block_data = block.get("child_database", {})
         title = block_data.get("title", "Untitled")
-        
+
         return f"[Child Database: {title}]"
+
+    def _parse_divider(self, block: dict) -> Optional[str]:
+        """Parse divider block as a horizontal rule marker."""
+        return "---"
+
+    def _parse_equation(self, block: dict) -> Optional[str]:
+        """Parse equation block (LaTeX expression)."""
+        block_data = block.get("equation", {})
+        expression = block_data.get("expression", "")
+        if not expression:
+            return None
+        return f"[Equation] {expression}"
+
+    def _parse_bookmark(self, block: dict) -> Optional[str]:
+        """Parse bookmark block (URL + optional caption)."""
+        block_data = block.get("bookmark", {})
+        url = block_data.get("url", "")
+        caption = self._extract_rich_text(block_data.get("caption", []))
+
+        if not url and not caption:
+            return None
+
+        result = f"[Bookmark: {url}]" if url else "[Bookmark]"
+        if caption:
+            result += f" {caption}"
+        return result
+
+    def _parse_media(self, block: dict) -> Optional[str]:
+        """Parse media blocks: image, video, file, pdf."""
+        block_type = block.get("type")
+        block_data = block.get(block_type, {})
+        caption = self._extract_rich_text(block_data.get("caption", []))
+
+        url = ""
+        source_type = block_data.get("type", "")
+        if source_type == "external":
+            url = block_data.get("external", {}).get("url", "")
+        elif source_type == "file":
+            url = block_data.get("file", {}).get("url", "")
+
+        label = block_type.capitalize()
+        result = f"[{label}: {url}]" if url else f"[{label}]"
+        if caption:
+            result += f" {caption}"
+
+        return result if (url or caption) else None
+
+    def _parse_embed(self, block: dict) -> Optional[str]:
+        """Parse embed block (URL + optional caption)."""
+        block_data = block.get("embed", {})
+        url = block_data.get("url", "")
+        caption = self._extract_rich_text(block_data.get("caption", []))
+
+        if not url and not caption:
+            return None
+
+        result = f"[Embed: {url}]" if url else "[Embed]"
+        if caption:
+            result += f" {caption}"
+        return result
+
+    def _parse_link_preview(self, block: dict) -> Optional[str]:
+        """Parse link preview block."""
+        block_data = block.get("link_preview", {})
+        url = block_data.get("url", "")
+        if not url:
+            return None
+        return f"[Link: {url}]"
