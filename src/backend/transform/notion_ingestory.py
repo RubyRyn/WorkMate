@@ -1,4 +1,5 @@
 import json
+import re
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from src.backend.load.chroma_manager import ChromaManager
 from src.backend.load.bm25_manager import BM25Manager, BM25_INDEX_PATH
@@ -77,7 +78,7 @@ class NotionIngestor:
 
     def _enrich_content(self, doc, id_to_doc, parent_to_children):
         """
-        Enrich a document's content with parent context.
+        Enrich a document's content with parent context and database properties.
         Child pages are indexed separately, so their summaries are not appended here
         to avoid content cross-contamination.
         """
@@ -92,9 +93,42 @@ class NotionIngestor:
             parent_title = parent_doc.get("title", "Untitled")
             enriched_parts.append(f"[Parent Page: {parent_title}]\n")
 
+        # For database rows, prepend structured properties so they're searchable
+        if doc.get("source_type") == "database_row" and doc.get("properties"):
+            prop_lines = []
+            for key, value in doc["properties"].items():
+                if key.startswith("_"):
+                    continue
+                if key.lower() in ("title", "name"):
+                    continue
+                if value is None or value == "" or value == []:
+                    continue
+                if isinstance(value, list):
+                    value = ", ".join(str(v) for v in value)
+                prop_lines.append(f"{key}: {value}")
+            if prop_lines:
+                enriched_parts.append("[Properties]\n" + "\n".join(prop_lines) + "\n")
+
         enriched_parts.append(content)
 
         return "\n".join(enriched_parts)
+
+    def _extract_section_header(self, chunk_text, previous_header):
+        """
+        Find heading markers (produced by BlockParser) in a chunk's text.
+        Returns (section_header_for_this_chunk, heading_to_carry_forward).
+        """
+        headings = re.findall(r'^(#{1,3})\s+(.+)$', chunk_text, re.MULTILINE)
+        if headings:
+            last_heading = headings[-1][1].strip()
+            first_heading = headings[0][1].strip()
+            # If the chunk starts with a heading, use it as the section
+            first_line = chunk_text.lstrip().split('\n')[0]
+            if re.match(r'^#{1,3}\s+', first_line):
+                return first_heading, last_heading
+            else:
+                return previous_header, last_heading
+        return previous_header, previous_header
 
     def _process_document(self, doc, id_to_doc, parent_to_children):
         """
@@ -115,8 +149,13 @@ class NotionIngestor:
         if parent_id and parent_id in id_to_doc:
             parent_title = id_to_doc[parent_id].get("title", "Untitled")
 
+        current_section = ""
         for i, chunk in enumerate(physical_splits):
             chunks.append(chunk.page_content)
+
+            section_header, current_section = self._extract_section_header(
+                chunk.page_content, current_section
+            )
 
             chunk_metadata = {
                 "parent_id": doc.get("id"),
@@ -124,6 +163,7 @@ class NotionIngestor:
                 "url": doc.get("url"),
                 "source_type": doc.get("source_type", "page"),
                 "chunk_index": i,
+                "section_header": section_header,
             }
 
             if self.workspace_id:
@@ -133,6 +173,10 @@ class NotionIngestor:
                 chunk_metadata["parent_title"] = parent_title
             if parent_id:
                 chunk_metadata["notion_parent_id"] = parent_id
+            if doc.get("created_time"):
+                chunk_metadata["created_time"] = doc["created_time"]
+            if doc.get("last_edited_time"):
+                chunk_metadata["last_edited_time"] = doc["last_edited_time"]
 
             metadatas.append(chunk_metadata)
             ids.append(f"{doc['id']}_{i}")

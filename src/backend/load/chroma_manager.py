@@ -31,7 +31,6 @@ class ChromaManager:
 
         # Initialize Persistent Client
         self.client = chromadb.PersistentClient(path=db_path)
-        self.embedder = GoogleEmbedder()
 
         # Open collection WITHOUT embedding_function to avoid ChromaDB's
         # conflict detection. We embed manually in add_documents() and query().

@@ -133,7 +133,7 @@ async def send_message(
                         all_chunks.append({
                             "chunk_id": chunk_id,
                             "page_title": meta.get("title", "Unknown Source"),
-                            "section": meta.get("parent_title", ""),
+                            "section": meta.get("section_header") or meta.get("parent_title", ""),
                             "text": doc.strip().replace("\r\n", "\n"),
                         })
 
@@ -291,7 +291,7 @@ async def stream_message(
                         all_chunks.append({
                             "chunk_id": chunk_id,
                             "page_title": meta.get("title", "Unknown Source"),
-                            "section": meta.get("parent_title", ""),
+                            "section": meta.get("section_header") or meta.get("parent_title", ""),
                             "text": doc.strip().replace("\r\n", "\n"),
                         })
 

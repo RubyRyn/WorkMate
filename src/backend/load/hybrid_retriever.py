@@ -37,7 +37,7 @@ class HybridRetriever:
                     "chunk_id": chunk_id,
                     "text": doc.strip().replace("\r\n", "\n"),
                     "page_title": meta.get("title", "Unknown Source"),
-                    "section": meta.get("parent_title", ""),
+                    "section": meta.get("section_header") or meta.get("parent_title", ""),
                     **meta,
                 })
         return output
