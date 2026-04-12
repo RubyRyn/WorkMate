@@ -26,7 +26,7 @@ from src.backend.schemas.conversation import (
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 logger = logging.getLogger(__name__)
 
-MAX_CONTEXT_CHARS = 5000
+MAX_CONTEXT_CHARS = 15000
 
 
 @router.post("/", response_model=ConversationSummary)
