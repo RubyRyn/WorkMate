@@ -14,6 +14,15 @@ from src.backend.load.hybrid_retriever import HybridRetriever
 from src.backend.llm.gemini_client import GeminiClient
 from src.backend.llm.voyage_reranker import VoyageReranker
 from src.backend.models.conversation import Conversation, MessageRecord
+REFUSAL_PHRASES = [
+    "cannot find",
+    "cannot locate",
+    "not found in",
+    "no information",
+    "not mentioned",
+    "no relevant",
+    "unable to find",
+]
 from src.backend.models.user import User
 from src.backend.schemas.conversation import (
     ConversationDetail,
@@ -162,12 +171,15 @@ async def send_message(
             final_chunks.append(chunk)
             total_chars += len(chunk["text"])
 
-        answer = gemini.ask_workmate(
-            chunks=final_chunks,
-            user_question=request.question,
-            debug=request.debug,
-            conversation_history=conversation_history,
-        )
+        if not final_chunks:
+            answer = "I cannot find relevant information in your Notion docs to answer this question."
+        else:
+            answer = gemini.ask_workmate(
+                chunks=final_chunks,
+                user_question=request.question,
+                debug=request.debug,
+                conversation_history=conversation_history,
+            )
 
     except Exception as e:
         logger.error(f"RAG pipeline error: {e}")
@@ -322,20 +334,25 @@ async def stream_message(
 
     async def event_generator():
         full_answer = ""
-        try:
-            async for text_chunk in gemini.ask_workmate_stream(
-                chunks=final_chunks,
-                user_question=request.question,
-                debug=request.debug,
-                conversation_history=conversation_history,
-            ):
-                full_answer += text_chunk
-                yield {"data": json.dumps({"chunk": text_chunk})}
-        except Exception as e:
-            logger.error(f"Streaming error: {e}")
-            error_msg = "Sorry, something went wrong while generating a response."
-            full_answer = error_msg
-            yield {"data": json.dumps({"chunk": error_msg})}
+
+        if not final_chunks:
+            full_answer = "I cannot find relevant information in your Notion docs to answer this question."
+            yield {"data": json.dumps({"chunk": full_answer})}
+        else:
+            try:
+                async for text_chunk in gemini.ask_workmate_stream(
+                    chunks=final_chunks,
+                    user_question=request.question,
+                    debug=request.debug,
+                    conversation_history=conversation_history,
+                ):
+                    full_answer += text_chunk
+                    yield {"data": json.dumps({"chunk": text_chunk})}
+            except Exception as e:
+                logger.error(f"Streaming error: {e}")
+                error_msg = "Sorry, something went wrong while generating a response."
+                full_answer = error_msg
+                yield {"data": json.dumps({"chunk": error_msg})}
 
         # Save the full assembled answer
         assistant_msg = MessageRecord(
@@ -353,9 +370,11 @@ async def stream_message(
         db.commit()
         db.refresh(assistant_msg)
 
-        # Only send sources if the LLM actually used them (not "cannot find")
+        # Only send sources if the LLM actually used them (not a refusal)
         sources = []
-        if "cannot find" not in full_answer.lower():
+        answer_lower = full_answer.lower()
+        has_refusal = any(phrase in answer_lower for phrase in REFUSAL_PHRASES)
+        if not has_refusal:
             sources = [
                 {
                     "title": c.get("page_title", "Unknown Source"),

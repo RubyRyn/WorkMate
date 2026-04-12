@@ -83,7 +83,7 @@ def get_rag_prompt(
 
     debug_instruction = ""
     if debug:
-        debug_instruction = "\n    5) DEBUG MODE ACTIVE: In addition to the standard citation, also append the chunk ID, e.g., [Document name, section, paragraph, Chunk ID: <id>]."
+        debug_instruction = "\n    5) DEBUG MODE ACTIVE: In addition to the standard citation, also append the chunk ID, e.g., [Sprint Plan, Backend Tasks, Chunk ID: page-1_3]."
 
     return f"""
     {context_block}
@@ -95,7 +95,7 @@ def get_rag_prompt(
     1) Answer ONLY using the context chunks above.
     2) If multiple chunks mention the topic, prefer the most specific one.
     3) If no chunk clearly answers, reply exactly: "I cannot find this in your Notion docs."
-    4) Output MUST include inline citations for the source of its findings in the exact format: [Document name, section, paragraph] (section and paragraph are optional if not provided).{debug_instruction}
+    4) Output MUST include inline citations using the page and section metadata from the chunks above, in the format: [page, section] (omit section if not provided). Example: [Sprint Plan, Backend Tasks] or [Meeting Notes].{debug_instruction}
 
     Remember: Do not use outside knowledge.
     """.strip()
@@ -128,7 +128,7 @@ def get_rag_prompt_with_history(
 
     debug_instruction = ""
     if debug:
-        debug_instruction = "\n    5) DEBUG MODE ACTIVE: In addition to the standard citation, also append the chunk ID, e.g., [Document name, section, paragraph, Chunk ID: <id>]."
+        debug_instruction = "\n    5) DEBUG MODE ACTIVE: In addition to the standard citation, also append the chunk ID, e.g., [Sprint Plan, Backend Tasks, Chunk ID: page-1_3]."
 
     return f"""
     {history_block}
@@ -142,7 +142,7 @@ def get_rag_prompt_with_history(
     1) Answer ONLY using the context chunks above.
     2) If multiple chunks mention the topic, prefer the most specific one.
     3) If no chunk clearly answers, reply exactly: "I cannot find this in your Notion docs."
-    4) Output MUST include inline citations for the source of its findings in the exact format: [Document name, section, paragraph] (section and paragraph are optional if not provided).{debug_instruction}
+    4) Output MUST include inline citations using the page and section metadata from the chunks above, in the format: [page, section] (omit section if not provided). Example: [Sprint Plan, Backend Tasks] or [Meeting Notes].{debug_instruction}
     5) Use the conversation history for context about what the user is referring to, but still only answer from the context chunks.
 
     Remember: Do not use outside knowledge.
