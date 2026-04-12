@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Tuple
 logger = logging.getLogger(__name__)
 
 DEFAULT_RERANK_MODEL = "rerank-2"
-RELEVANCE_THRESHOLD = 0.3
+RELEVANCE_THRESHOLD = 0.4
 
 
 class VoyageReranker:

@@ -108,7 +108,7 @@ async def send_message(
         # Step 1: Hybrid Retrieval (vector + BM25, merged via RRF)
         where_filter = get_workspace_filter(current_user.id, db)
         all_chunks = hybrid.search(
-            request.question, vector_top_k=15, bm25_top_k=15, final_top_k=15,
+            request.question, vector_top_k=20, bm25_top_k=10, final_top_k=20,
             where=where_filter,
         )
 
@@ -266,7 +266,7 @@ async def stream_message(
         # Step 1: Hybrid Retrieval (vector + BM25, merged via RRF)
         where_filter = get_workspace_filter(current_user.id, db)
         all_chunks = hybrid.search(
-            request.question, vector_top_k=15, bm25_top_k=15, final_top_k=15,
+            request.question, vector_top_k=20, bm25_top_k=10, final_top_k=20,
             where=where_filter,
         )
 
