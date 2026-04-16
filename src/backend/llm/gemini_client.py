@@ -115,7 +115,7 @@ class GeminiClient:
         # Keep outputs grounded + stable
         cfg = types.GenerateContentConfig(
             system_instruction=prompts.WORKMATE_SYSTEM_INSTRUCTION,
-            temperature=0.2,
+            temperature=0.0,
             max_output_tokens=1024,
         )
 
@@ -160,7 +160,7 @@ class GeminiClient:
 
         cfg = types.GenerateContentConfig(
             system_instruction=prompts.WORKMATE_SYSTEM_INSTRUCTION,
-            temperature=0.2,
+            temperature=0.0,
             max_output_tokens=1024,
         )
 
