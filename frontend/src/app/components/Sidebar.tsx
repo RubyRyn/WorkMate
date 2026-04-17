@@ -270,14 +270,14 @@ export function Sidebar({
           <div className="space-y-1.5">
             {workspaces.length === 0 ? (
               <Link
-                to="/settings"
+                to="/app/settings"
                 className="block text-xs text-slate-400 hover:text-purple-500 text-center py-3 transition-colors"
               >
                 Connect a Notion workspace
               </Link>
             ) : (
               workspaces.map((workspace) => (
-                <Link key={workspace.id} to="/settings">
+                <Link key={workspace.id} to="/app/settings">
                 <Card
                   className="p-2.5 hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer border-slate-200 dark:border-slate-700"
                 >
@@ -309,9 +309,9 @@ export function Sidebar({
         {/* Navigation Links */}
         <div className="space-y-1 flex-shrink-0">
           <Link
-            to="/"
+            to="/app"
             className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              location.pathname === '/'
+              location.pathname === '/app'
                 ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
@@ -320,9 +320,9 @@ export function Sidebar({
             Chat
           </Link>
           <Link
-            to="/settings"
+            to="/app/settings"
             className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              location.pathname === '/settings'
+              location.pathname === '/app/settings'
                 ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
@@ -332,9 +332,9 @@ export function Sidebar({
           </Link>
           {isAdmin && (
             <Link
-              to="/admin"
+              to="/app/admin"
               className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                location.pathname === '/admin'
+                location.pathname === '/app/admin'
                   ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
                   : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
               }`}

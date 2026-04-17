@@ -102,7 +102,7 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
     jwt_token = create_access_token({"sub": str(user.id)})
 
     # Redirect to frontend with token
-    redirect_url = f"{settings.FRONTEND_URL}?token={jwt_token}"
+    redirect_url = f"{settings.FRONTEND_URL}/app?token={jwt_token}"
     return RedirectResponse(url=redirect_url)
 
 

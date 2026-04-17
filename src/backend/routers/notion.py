@@ -201,7 +201,7 @@ async def notion_callback(
             _ingest_workspace, workspace.id, access_token, notion_workspace_id
         )
 
-    redirect_url = f"{settings.FRONTEND_URL}/settings?notion=connected"
+    redirect_url = f"{settings.FRONTEND_URL}/app/settings?notion=connected"
     return RedirectResponse(url=redirect_url)
 
 
