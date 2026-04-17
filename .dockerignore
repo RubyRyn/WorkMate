@@ -1,0 +1,51 @@
+# ── Secrets ──────────────────────────────────────────────────────
+.env
+.env.*
+
+# ── Python runtime / venvs ───────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ── Databases (live on IBM LinuxONE, not in the image) ───────────
+workmate.db
+chroma_db/
+workmate_db/
+*.db
+*.sqlite3
+
+# ── Frontend (deployed on Cloudflare) ────────────────────────────
+frontend/
+
+# ── Dev / test artifacts ─────────────────────────────────────────
+tests/
+docs/
+*.log
+chunk_tuning_experiment.py
+ingest.py
+
+# ── Data directories ─────────────────────────────────────────────
+src/data/
+input/
+output/
+
+# ── Version control / IDE ────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+
+# ── OS ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Antigravity / CI tooling ─────────────────────────────────────
+.agent/
+scripts/
+k8s/
