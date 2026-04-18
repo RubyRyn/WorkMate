@@ -34,7 +34,7 @@ spec:
         - name: workmate-backend
           # Replace with the real ECR URI after pushing the image:
           # <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/workmate-backend:latest
-          image: REPLACE_WITH_ECR_IMAGE_URI
+          image: 246710930255.dkr.ecr.us-east-1.amazonaws.com/workmate-backend:91bb313
           imagePullPolicy: Always
           ports:
             - name: http
