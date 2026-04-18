@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-workmate_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-workmate_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-workmate}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-workmate_user} -d $${POSTGRES_DB:-workmate}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  chromadb:
+    build:
+      context: .
+      dockerfile: Chroma.Dockerfile
+    restart: unless-stopped
+    volumes:
+      - chromadata:/chroma/chroma
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Cron sidecar for robust off-site backups directly to AWS S3
+  backup:
+    image: alpine:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    volumes:
+      - ./backup.sh:/usr/local/bin/backup.sh
+      - pgdata:/var/lib/postgresql/data:ro
+      - chromadata:/chroma/chroma:ro
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      S3_BACKUP_BUCKET: ${S3_BACKUP_BUCKET}
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-workmate_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-workmate_pass}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-workmate_pass} # required for pg_dump
+    command: >
+      /bin/sh -c "apk add --no-cache postgresql-client aws-cli zip && 
+      chmod +x /usr/local/bin/backup.sh &&
+      echo '0 2 * * * /usr/local/bin/backup.sh' > /etc/crontabs/root && 
+      crond -f -d 8"
+
+volumes:
+  pgdata:
+  chromadata:
