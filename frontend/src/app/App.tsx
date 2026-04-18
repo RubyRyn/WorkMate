@@ -1,5 +1,4 @@
 import { Routes, Route } from "react-router-dom";
-import { LoginPage } from "./pages/LoginPage";
 import { ChatPage } from "./pages/ChatPage";
 import { AdminPage } from "./pages/AdminPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -9,12 +8,11 @@ import { Sidebar } from "./components/Sidebar";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute>
+    <ProtectedRoute>
+      <Routes>
+        <Route
+          path="admin"
+          element={
             <AdminRoute>
               <div className="flex h-screen overflow-hidden bg-white dark:bg-slate-900">
                 <Sidebar
@@ -25,13 +23,11 @@ export default function App() {
                 <AdminPage />
               </div>
             </AdminRoute>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
+          }
+        />
+        <Route
+          path="settings"
+          element={
             <div className="flex h-screen overflow-hidden bg-white dark:bg-slate-900">
               <Sidebar
                 activeConversationId={null}
@@ -40,17 +36,10 @@ export default function App() {
               />
               <SettingsPage />
             </div>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/*"
-        element={
-          <ProtectedRoute>
-            <ChatPage />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+          }
+        />
+        <Route path="*" element={<ChatPage />} />
+      </Routes>
+    </ProtectedRoute>
   );
 }
