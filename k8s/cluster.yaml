@@ -13,11 +13,12 @@ iam:
   withOIDC: true
 
 managedNodeGroups:
-  - name: ng-workmate-pd
+  - name: ng-workmate-pd-v2
     maxPodsPerNode: 11
     instanceType: t3.micro
-    # Start with 2 nodes; autoscaler can grow to 4 during traffic spikes.
-    desiredCapacity: 2
+    # Start with 1 nodes; autoscaler can grow to 4 during traffic spikes.
+    desiredCapacity: 1
+    volumeSize: 20
     minSize: 1
     maxSize: 4
     # Grant nodes the ability to pull images from ECR
