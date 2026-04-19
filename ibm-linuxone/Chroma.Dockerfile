@@ -1,10 +1,16 @@
 # ChromaDB native s390x build using python slim
 FROM python:3.11-slim
 
-# Install system dependencies required for native s390x compilation of C-bindings
+# Install system dependencies required for native s390x compilation of C-bindings and Rust packages
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    python3-dev \
+    cmake \
+    pkg-config \
+    cargo \
+    rustc \
+    libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /chroma
