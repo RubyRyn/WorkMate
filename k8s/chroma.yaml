@@ -45,7 +45,10 @@ kind: Service
 metadata:
   name: chroma-service
   namespace: workmate
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
 spec:
+  type: LoadBalancer
   selector:
     app: chroma
   ports:

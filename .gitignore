@@ -36,6 +36,7 @@ dist/
 
 # Data stores (explicit)
 notion_data.json
+*.zip
 
 # SQLite database
 workmate.db
