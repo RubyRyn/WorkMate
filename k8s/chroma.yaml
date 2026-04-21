@@ -1,15 +1,3 @@
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: chroma-pvc
-  namespace: workmate
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 5Gi
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -40,17 +28,17 @@ spec:
             - name: chroma-data
               mountPath: "/chroma/chroma"
           resources:
-            # Sized safely for the t3.micro EKS constraints
             requests:
-              memory: "128Mi"
-              cpu: "50m"
+              memory: "32Mi"
+              cpu: "10m"
             limits:
               memory: "512Mi"
               cpu: "500m"
       volumes:
         - name: chroma-data
-          persistentVolumeClaim:
-            claimName: chroma-pvc
+          hostPath:
+            path: "/data/chroma"
+            type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
