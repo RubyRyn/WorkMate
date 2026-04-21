@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workmate-backend
+  namespace: workmate
+  labels:
+    app.kubernetes.io/name: workmate
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: workmate-backend
+  # Zero-downtime rolling update: bring up new pods before removing old
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: workmate-backend
+        app.kubernetes.io/name: workmate
+        app.kubernetes.io/component: backend
+    spec:
+      # ── Security context ───────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: workmate-backend
+          # Replace with the real ECR URI after pushing the image:
+          # <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/workmate-backend:latest
+          image: 246710930255.dkr.ecr.us-east-1.amazonaws.com/workmate-backend:91bb313
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          # ── Environment ───────────────────────────────────────
+          envFrom:
+            - secretRef:
+                name: workmate-secrets
+          # ── Health probes ─────────────────────────────────────
+          # Liveness: restart the pod if /health stops responding
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # Readiness: only route traffic once /health returns 200
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # ── Resources ─────────────────────────────────────────
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          # ── Container security ────────────────────────────────
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false # uvicorn needs /tmp write access
+            capabilities:
+              drop:
+                - ALL
+      # ── Pod scheduling ────────────────────────────────────────
+      # Prefer spreading replicas across nodes for HA
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: workmate-backend
