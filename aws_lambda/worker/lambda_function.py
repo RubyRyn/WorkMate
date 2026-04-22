@@ -55,6 +55,7 @@ def lambda_handler(event, context):
         ingestor = NotionIngestor() 
         
         processed_count = 0
+        failed_ids = []
         records = event.get('Records', [])
         print(f"Received batch of {len(records)} records from SQS.")
 
@@ -86,15 +87,21 @@ def lambda_handler(event, context):
                     
             except Exception as e:
                 print(f"  Error processing page {page_id}: {e}")
-                # We don't raise here to allow other records in the batch to be processed.
-                # However, in production, you might want to partially fail the batch.
+                # Track failed records for partial batch failure
+                failed_ids.append({'itemIdentifier': record['messageId']})
                 continue
                 
         print(f"Batch completed. Processed {processed_count}/{len(records)} pages.")
-        return {
+        
+        # Return batchItemFailures so SQS retries only failed messages
+        response = {
             'statusCode': 200,
             'body': json.dumps(f"Processed {processed_count} pages.")
         }
+        if failed_ids:
+            response['batchItemFailures'] = failed_ids
+            
+        return response
         
     except Exception as e:
         print(f"Critical Worker Error: {e}")

@@ -21,7 +21,7 @@ set -euo pipefail
 
 # ── Resolve tool paths (works regardless of invocation context) ───────────────
 # Prefer Homebrew AWS CLI v2; fall back to pip-installed v1
-export PATH="/opt/homebrew/bin:/usr/local/bin:/Users/ruts/Library/Python/3.9/bin:${PATH:-}"
+export PATH="/opt/homebrew/bin:/usr/local/bin:${PATH:-}"
 
 # Docker CLI — Docker Desktop on macOS installs here
 DOCKER="${DOCKER:-/Applications/Docker.app/Contents/Resources/bin/docker}"

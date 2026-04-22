@@ -28,6 +28,11 @@ def lambda_handler(event, context):
     """
     Triggered by EventBridge. 
     Checks Notion for updated pages since LAST_SYNC_TIME and pushes IDs to SQS.
+    
+    Note: This detector uses a single system-wide Notion integration token 
+    (from SSM) to monitor a shared/public workspace. This is distinct from 
+    the main application, which uses per-user OAuth tokens for multi-tenant 
+    private workspace access.
     """
     try:
         notion_token = get_param(NOTION_TOKEN_PARAM)

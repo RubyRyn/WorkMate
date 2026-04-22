@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -euo pipefail
 
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
 echo "Starting LinuxONE backup routine at $DATE"
