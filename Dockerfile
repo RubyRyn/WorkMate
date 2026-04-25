@@ -38,6 +38,11 @@ COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 COPY --chown=appuser:appuser main.py ./main.py
 COPY --chown=appuser:appuser src/    ./src/
 
+# BM25Manager persists its index to /app/workmate_db/bm25_index.pkl.
+# Pre-create the directory with appuser ownership so the non-root runtime
+# can write to it. (Chroma itself runs remotely via CHROMA_HOST.)
+RUN mkdir -p /app/workmate_db && chown appuser:appuser /app/workmate_db
+
 # Activate the venv by prepending it to PATH
 ENV PATH="/app/.venv/bin:$PATH" \
     # Prevent Python from writing .pyc files inside the container
