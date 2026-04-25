@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Paperclip, MessageSquare, Upload, Sparkles, Download, Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Send, Paperclip, MessageSquare, Upload, Sparkles, Download, Menu, Database } from 'lucide-react';
 import { Message } from './Message';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
@@ -11,9 +12,10 @@ import {
   sendConversationMessageStream,
   uploadFile,
   uploadFiles,
+  getWorkspaces,
 } from '../../services/api';
 import { exportConversationAsMarkdown } from '../../utils/exportMarkdown';
-import type { ChatMessage } from '../../types/chat';
+import type { ChatMessage, NotionWorkspace } from '../../types/chat';
 
 interface ChatWindowProps {
   conversationId: number | null;
@@ -28,6 +30,13 @@ export function ChatWindow({ conversationId, conversationTitle, onConversationCr
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [workspaces, setWorkspaces] = useState<NotionWorkspace[] | null>(null);
+
+  useEffect(() => {
+    getWorkspaces()
+      .then(setWorkspaces)
+      .catch(() => setWorkspaces([]));
+  }, []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const quickSendRef = useRef<((msg: string) => void) | null>(null);
@@ -220,7 +229,27 @@ export function ChatWindow({ conversationId, conversationTitle, onConversationCr
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        {messages.length === 0 && !isLoading ? (
+        {messages.length === 0 && !isLoading && workspaces !== null && workspaces.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-6">
+              <Database className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+              Welcome to WorkMate 👋
+            </h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md">
+              Connect a Notion workspace to start asking questions across your docs. WorkMate will search your pages and answer with sources cited.
+            </p>
+            <Link to="/app/settings">
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white px-6 h-11">
+                Connect Notion
+              </Button>
+            </Link>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-6 max-w-md">
+              You can also upload PDF, TXT, or Markdown files to chat with — use the paperclip below.
+            </p>
+          </div>
+        ) : messages.length === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-full px-6 text-center">
             <div className="w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-6">
               <Sparkles className="w-8 h-8 text-purple-600 dark:text-purple-400" />
