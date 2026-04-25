@@ -1,12 +1,17 @@
-FROM public.ecr.aws/lambda/python:3.12
+FROM public.ecr.aws/lambda/python:3.13
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR ${LAMBDA_TASK_ROOT}
 
-# Install core dependencies directly to avoid build issues
-RUN pip install langchain-text-splitters==0.0.1 chromadb==0.4.24 google-genai==0.3.0 boto3==1.34.14 requests==2.31.0 urllib3==1.26.18
+# Install into LAMBDA_TASK_ROOT — Lambda's runtime adds it to sys.path
+# but does not activate venvs, so `uv sync` into .venv won't work here.
+COPY pyproject.toml uv.lock ./
+RUN uv export --frozen --no-dev --format requirements-txt -o /tmp/requirements.txt && \
+    pip install --no-cache-dir --target ${LAMBDA_TASK_ROOT} -r /tmp/requirements.txt && \
+    rm /tmp/requirements.txt pyproject.toml uv.lock
 
-# Copy application source
-COPY src/ ./src/
-COPY aws_lambda/worker/lambda_function.py ./
+COPY src/                                   ${LAMBDA_TASK_ROOT}/src/
+COPY aws_lambda/worker/lambda_function.py   ${LAMBDA_TASK_ROOT}/
 
 CMD ["lambda_function.lambda_handler"]
