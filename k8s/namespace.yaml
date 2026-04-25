@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: workmate
+  labels:
+    app.kubernetes.io/name: workmate
+    app.kubernetes.io/managed-by: kubectl

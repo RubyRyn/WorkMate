@@ -130,6 +130,26 @@ class NotionIngestor:
                 return previous_header, last_heading
         return previous_header, previous_header
 
+    def chunk_documents(self, raw_docs):
+        """
+        Reusable method to convert raw Notion documents into chunks, metadatas, and ids.
+        Does NOT interact with the database.
+        """
+        raw_docs = self._deduplicate_docs(raw_docs)
+        id_to_doc, parent_to_children = self._build_parent_child_maps(raw_docs)
+
+        all_chunks = []
+        all_metadatas = []
+        all_ids = []
+
+        for doc in raw_docs:
+            chunks, metadatas, ids = self._process_document(doc, id_to_doc, parent_to_children)
+            all_chunks.extend(chunks)
+            all_metadatas.extend(metadatas)
+            all_ids.extend(ids)
+
+        return all_chunks, all_metadatas, all_ids
+
     def _process_document(self, doc, id_to_doc, parent_to_children):
         """
         Chunk a single document using RecursiveCharacterTextSplitter.
@@ -187,22 +207,7 @@ class NotionIngestor:
         """Public method to execute the full ingestion pipeline."""
         print(f"Loading data from {self.file_path}...")
         raw_docs = self._load_data()
-        raw_docs = self._deduplicate_docs(raw_docs)
-        # Build parent-child relationship maps
-        print("Building parent-child relationship maps...")
-        id_to_doc, parent_to_children = self._build_parent_child_maps(raw_docs)
-        print(f"   Found {len(parent_to_children)} parent documents with children")
-        all_chunks = []
-        all_metadatas = []
-        all_ids = []
-
-        print(f"Running Hybrid Chunking on {len(raw_docs)} documents (with context enrichment)...")
-
-        for doc in raw_docs:
-            chunks, metadatas, ids = self._process_document(doc, id_to_doc, parent_to_children)
-            all_chunks.extend(chunks)
-            all_metadatas.extend(metadatas)
-            all_ids.extend(ids)
+        all_chunks, all_metadatas, all_ids = self.chunk_documents(raw_docs)
 
         if all_chunks:
             print(f"Storing {len(all_chunks)} chunks into Chroma...")
@@ -218,22 +223,7 @@ class NotionIngestor:
 
     def run_pipeline_from_docs(self, raw_docs):
         """Run the ingestion pipeline from in-memory document dicts (no file I/O)."""
-        raw_docs = self._deduplicate_docs(raw_docs)
-        print("Building parent-child relationship maps...")
-        id_to_doc, parent_to_children = self._build_parent_child_maps(raw_docs)
-        print(f"   Found {len(parent_to_children)} parent documents with children")
-
-        all_chunks = []
-        all_metadatas = []
-        all_ids = []
-
-        print(f"Running Hybrid Chunking on {len(raw_docs)} documents (with context enrichment)...")
-
-        for doc in raw_docs:
-            chunks, metadatas, ids = self._process_document(doc, id_to_doc, parent_to_children)
-            all_chunks.extend(chunks)
-            all_metadatas.extend(metadatas)
-            all_ids.extend(ids)
+        all_chunks, all_metadatas, all_ids = self.chunk_documents(raw_docs)
 
         if all_chunks:
             print(f"Storing {len(all_chunks)} chunks into Chroma...")

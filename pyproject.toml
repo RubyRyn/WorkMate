@@ -21,4 +21,5 @@ dependencies = [
     "sse-starlette>=3.3.2",
     "voyageai>=0.3.7",
     "bm25s>=0.2.12",
+    "psycopg2-binary>=2.9.10",
 ]

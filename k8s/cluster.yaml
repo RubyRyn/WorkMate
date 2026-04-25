@@ -1,0 +1,32 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: workmate-cluster
+  region: us-east-1
+  version: "1.30"
+
+# IAM OIDC provider — required for AWS Load Balancer Controller and
+# any pods that need to assume IAM roles via IRSA (IAM Roles for
+# Service Accounts).
+iam:
+  withOIDC: true
+
+managedNodeGroups:
+  - name: ng-workmate-pd-v2
+    maxPodsPerNode: 11
+    instanceType: t3.micro
+    # Start with 1 nodes; autoscaler can grow to 4 during traffic spikes.
+    desiredCapacity: 1
+    volumeSize: 20
+    minSize: 1
+    maxSize: 4
+    # Grant nodes the ability to pull images from ECR
+    iam:
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+    tags:
+      Project: WorkMate
+      Environment: production

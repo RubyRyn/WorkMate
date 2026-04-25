@@ -29,8 +29,16 @@ class ChromaManager:
         # Initialize Google Embedder (gemini-embedding-001)
         self.embedder = GoogleEmbedder()
 
-        # Initialize Persistent Client
-        self.client = chromadb.PersistentClient(path=db_path)
+        # Initialize Client
+        chroma_host = os.getenv("CHROMA_HOST")
+        chroma_port = os.getenv("CHROMA_PORT", "8000")
+
+        if chroma_host:
+            logger.info(f"Connecting to ChromaDB at {chroma_host}:{chroma_port} via HttpClient")
+            self.client = chromadb.HttpClient(host=chroma_host, port=chroma_port)
+        else:
+            logger.info(f"Connecting to ChromaDB at {db_path} via PersistentClient")
+            self.client = chromadb.PersistentClient(path=db_path)
 
         # Open collection WITHOUT embedding_function to avoid ChromaDB's
         # conflict detection. We embed manually in add_documents() and query().

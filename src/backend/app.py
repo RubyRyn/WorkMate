@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from src.backend.config import settings
 from src.backend.database import Base, engine
@@ -18,6 +19,14 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # ── Health check ─────────────────────────────────────────────
+    # Lightweight endpoint used by EKS liveness and readiness probes.
+    # Intentionally placed before router includes so it is always
+    # reachable even if downstream routers fail to load.
+    @app.get("/health", tags=["health"], include_in_schema=False)
+    async def health_check() -> JSONResponse:
+        return JSONResponse({"status": "ok"})
 
     app.include_router(auth.router)
     app.include_router(admin.router)
