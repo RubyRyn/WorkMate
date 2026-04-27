@@ -24,9 +24,11 @@ class GoogleEmbedder(EmbeddingFunction):
     def __init__(self, model_name="gemini-embedding-001"):
         self.model_name = model_name
 
-        api_key = os.getenv("GEMINI_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        api_key = os.getenv("GEMINI_EMBEDDING_API_KEY")
         if not api_key:
-            print("⚠️ WARNING: No Gemini API key found in environment (GEMINI_KEY / GEMINI_API_KEY).")
+            print(
+                "⚠️ WARNING: No Gemini API key found in environment (GEMINI_EMBEDDING_API_KEY)."
+            )
 
         self.client = genai.Client(api_key=api_key)
 
@@ -60,7 +62,9 @@ class GoogleEmbedder(EmbeddingFunction):
                     error_str = str(e)
                     if "429" in error_str and attempt < 2:
                         wait_time = 45 * (attempt + 1)
-                        print(f"⏳ Rate limited on chunk {i+1}/{len(input)}, waiting {wait_time}s...")
+                        print(
+                            f"⏳ Rate limited on chunk {i + 1}/{len(input)}, waiting {wait_time}s..."
+                        )
                         time.sleep(wait_time)
                     else:
                         raise e
