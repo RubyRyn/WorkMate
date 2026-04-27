@@ -33,8 +33,12 @@ export function Navbar() {
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link to="/" className="text-lg font-bold text-white">
-          WorkMate
+        <Link to="/" className="flex items-center gap-2">
+          <img src="/workmate-icon.png" alt="WorkMate" className="h-7" />
+          <span className="text-lg tracking-tight text-white">
+            <span className="font-bold">Work</span>
+            <span className="font-light">Mate</span>
+          </span>
         </Link>
 
         <div className="hidden items-center gap-8 md:flex">
