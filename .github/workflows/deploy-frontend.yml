@@ -1,6 +1,8 @@
 name: Deploy Frontend to Cloudflare Pages
+# Supports manual trigger for re-deploys
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
