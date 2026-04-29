@@ -1,0 +1,81 @@
+name: Deploy Backend to AWS ECR & EKS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'k8s/deployment.yaml'
+      - '.github/workflows/deploy-backend.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'k8s/deployment.yaml'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: workmate-backend
+  EKS_CLUSTER_NAME: workmate-cluster
+  KUBECTL_NAMESPACE: workmate
+  DEPLOYMENT_NAME: workmate-backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    # We only want to actually deploy on push to main, not on PRs
+    # (Though PRs could still build the image to verify it builds)
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build a docker container and push it to ECR so that it can be deployed to EKS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          
+          # Only push to ECR and deploy if this is a push to main (not a PR)
+          if [ "${{ github.event_name }}" == "push" ]; then
+            docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+            echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update kubeconfig
+        if: github.event_name == 'push'
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: Deploy to Amazon EKS
+        if: github.event_name == 'push'
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Set the new image for the backend deployment
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.DEPLOYMENT_NAME }}=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -n ${{ env.KUBECTL_NAMESPACE }}
+          
+          # Wait for the rollout to complete
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.KUBECTL_NAMESPACE }}

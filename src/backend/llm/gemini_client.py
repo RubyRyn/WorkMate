@@ -21,10 +21,11 @@ class GeminiClient:
 
     def __init__(self, model_id: Optional[str] = None):
         import os
-        api_key = os.getenv("GEMINI_KEY") or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+
+        api_key = os.getenv("GEMINI_LLM_API_KEY")
         if not api_key:
-            raise ValueError("No Gemini API key found. Set GEMINI_KEY, GEMINI_API_KEY, or GOOGLE_API_KEY.")
-            
+            raise ValueError("No Gemini API key found. Set GEMINI_LLM_API_KEY.")
+
         self.client = genai.Client(api_key=api_key)
         self.model_id = model_id or DEFAULT_GEMINI_MODEL_ID
 
@@ -130,7 +131,9 @@ class GeminiClient:
             # Friendly message for MVP; later add structured logging + retries
             error_str = str(e)
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                retry_match = re.search(r"retryDelay['\"]:\s*['\"](\d+)s?['\"]", error_str)
+                retry_match = re.search(
+                    r"retryDelay['\"]:\s*['\"](\d+)s?['\"]", error_str
+                )
                 retry_secs = retry_match.group(1) if retry_match else "unknown"
                 logger.warning(
                     f"⚠️  Gemini rate limit hit (model: {self.model_id}). "
@@ -177,7 +180,9 @@ class GeminiClient:
         except Exception as e:
             error_str = str(e)
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                retry_match = re.search(r"retryDelay['\"]:\s*['\"](\d+)s?['\"]", error_str)
+                retry_match = re.search(
+                    r"retryDelay['\"]:\s*['\"](\d+)s?['\"]", error_str
+                )
                 retry_secs = retry_match.group(1) if retry_match else "unknown"
                 logger.warning(
                     f"⚠️  Gemini rate limit hit (model: {self.model_id}). "
